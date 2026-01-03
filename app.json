@@ -1,30 +1,130 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Betakah",
+    "slug": "betakah",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "betakah",
     "splash": {
-      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#78104A"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "qa.betakah.app",
+      "config": {
+        "usesNonExemptEncryption": false,
+        "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "Betakah needs camera access to take photos and verify your identity",
+        "NSPhotoLibraryUsageDescription": "Betakah needs photo library access to share event photos",
+        "NSLocationWhenInUseUsageDescription": "Betakah needs location access to show event venues on the map",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Betakah needs location access to show nearby events",
+        "NSContactsUsageDescription": "Betakah needs contacts access to invite guests to your events",
+        "NSCalendarsUsageDescription": "Betakah needs calendar access to add events to your calendar",
+        "NSMicrophoneUsageDescription": "Betakah needs microphone access for video recording",
+        "NSFaceIDUsageDescription": "Use Face ID to securely access your account",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "qa.betakah.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#78104A"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_CONTACTS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
+        "RECORD_AUDIO",
+        "VIBRATE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-localization",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Betakah needs camera access to capture your ID photo",
+          "photosPermission": "Betakah needs photo library access to upload your ID"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Betakah needs camera access to scan your ID"
+        }
+      ],
+      [
+        "expo-updates",
+        {
+          "username": "vecods"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#78104A"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Betakah needs location access to show nearby events and venues",
+          "locationWhenInUsePermission": "Betakah needs location access to show event venues on the map"
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Betakah needs contacts access to invite guests to your events"
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Betakah needs calendar access to add events to your calendar"
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Betakah needs microphone access for video recording"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to securely access your account"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e79fc6e3-b5e0-40a7-aa24-9741e16dc0e0"
+      }
+    },
+    "owner": "vecods"
   }
 }

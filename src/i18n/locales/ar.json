@@ -1,0 +1,360 @@
+{
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجاح",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "done": "تم",
+    "next": "التالي",
+    "back": "رجوع",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "ok": "حسناً",
+    "retry": "إعادة المحاولة",
+    "search": "بحث",
+    "noResults": "لا توجد نتائج",
+    "poweredBy": "مدعوم من بطاقة",
+    "guest": "ضيف"
+  },
+  "auth": {
+    "skip": "تخطي",
+    "onboarding": {
+      "slide1": {
+        "title": "أنشئ مناسبات خاصة",
+        "description": "خطط لحفلات الزفاف وأعياد الميلاد بخصوصية تامة"
+      },
+      "slide2": {
+        "title": "دعوات جميلة",
+        "description": "أرسل دعوات رقمية مذهلة تعكس طابعك"
+      },
+      "slide3": {
+        "title": "إدارة قوائم الضيوف",
+        "description": "تتبع الردود وإدارة الحضور بسهولة"
+      },
+      "slide4": {
+        "title": "الخصوصية أولاً",
+        "description": "تبقى مناسباتك خاصة مع من تختار"
+      },
+      "next": "التالي",
+      "getStarted": "ابدأ الآن"
+    },
+    "welcome": {
+      "title": "مرحباً بك في بطاقة",
+      "subtitle": "مناسباتك الخاصة، بإدارة أنيقة",
+      "getStarted": "ابدأ الآن",
+      "features": {
+        "events": "أنشئ وأدر مناسباتك الخاصة",
+        "invitations": "أرسل دعوات رقمية جميلة",
+        "guestList": "تتبع الردود في الوقت الفعلي",
+        "privacy": "حافظ على خصوصية مناسباتك"
+      }
+    },
+    "phone": {
+      "title": "رقم الهاتف",
+      "subtitle": "سنرسل لك رمز التحقق عبر الرسائل القصيرة",
+      "placeholder": "٥٠٠٠ ٠٠٠٠",
+      "helperText": "أدخل رقم هاتفك القطري المكون من 8 أرقام",
+      "continue": "متابعة",
+      "countryCode": "+974",
+      "terms": "بالمتابعة، أنت توافق على شروط الخدمة"
+    },
+    "otp": {
+      "title": "رمز التحقق",
+      "subtitle": "أدخل الرمز المرسل إلى {{phoneNumber}}",
+      "resend": "إعادة إرسال الرمز",
+      "resendIn": "إعادة الإرسال خلال {{seconds}} ثانية",
+      "verify": "تحقق",
+      "didntReceive": "لم تستلم الرمز؟",
+      "testHint": "للاختبار: استخدم 000000"
+    },
+    "registration": {
+      "title": "إنشاء حساب",
+      "subtitle": "أدخل معلوماتك للمتابعة",
+      "firstName": "الاسم الأول",
+      "lastName": "اسم العائلة",
+      "firstNamePlaceholder": "أدخل اسمك الأول",
+      "lastNamePlaceholder": "أدخل اسم عائلتك",
+      "gender": "الجنس",
+      "male": "ذكر",
+      "female": "أنثى",
+      "birthday": "تاريخ الميلاد",
+      "birthdayPlaceholder": "اختر تاريخ ميلادك",
+      "birthdayStep": {
+        "title": "تواريخ مهمة",
+        "subtitle": "أضف التواريخ التي تود تذكرها"
+      },
+      "dates": {
+        "birthday": "عيد ميلادك",
+        "selectDate": "اختر التاريخ",
+        "addDate": "إضافة تاريخ",
+        "optionalTitle": "اختياري",
+        "marriage": "ذكرى الزواج",
+        "partnerBirthday": "عيد ميلاد الشريك",
+        "kidBirthday": "عيد ميلاد الطفل {{number}}",
+        "addKid": "إضافة عيد ميلاد طفل"
+      },
+      "next": "التالي",
+      "createAccount": "إنشاء حساب",
+      "idVerification": {
+        "title": "تحقق من هويتك",
+        "subtitle": "التقط صورة لهويتك القطرية أو جواز سفرك",
+        "takePhoto": "التقط صورة",
+        "retake": "إعادة التقاط",
+        "privacyNote": "تُستخدم هويتك للتحقق فقط ولن تتم مشاركتها",
+        "idCaptured": "تم التقاط صورة الهوية"
+      }
+    },
+    "pending": {
+      "title": "في انتظار التحقق",
+      "subtitle": "جاري مراجعة حسابك",
+      "message": "سنبلغك فور التحقق من حسابك. عادةً ما يستغرق ذلك أقل من 24 ساعة.",
+      "contact": "تواصل مع الدعم"
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "صباح الخير",
+      "afternoon": "مساء الخير",
+      "evening": "مساء الخير"
+    },
+    "upcomingEvents": "المناسبات القادمة",
+    "pendingInvitations": "دعوات في انتظار الرد",
+    "upcomingDates": "تواريخ مهمة",
+    "noEvents": "لا توجد مناسبات قادمة",
+    "noDates": "لا توجد تواريخ قادمة",
+    "createFirst": "أنشئ مناسبتك الأولى",
+    "addDates": "إضافة تاريخ",
+    "addDatesDesc": "تتبع أعياد الميلاد والذكرى السنوية والمناسبات الخاصة",
+    "viewAll": "عرض الكل",
+    "today": "اليوم",
+    "tomorrow": "غداً",
+    "day": "يوم",
+    "daysLeft": "يوم",
+    "inDays": "بعد {{count}} أيام",
+    "createEventDesc": "ابدأ التخطيط لمناسبتك الخاصة القادمة",
+    "swipeToSee": "اسحب لرؤية المزيد",
+    "fromHost": "من {{name}}",
+    "createEvent": "إنشاء مناسبة",
+    "createEventSubtitle": "ابدأ التخطيط لمناسبتك القادمة"
+  },
+  "dates": {
+    "birthday": "عيد ميلاد",
+    "anniversary": "ذكرى سنوية",
+    "special": "مناسبة خاصة"
+  },
+  "events": {
+    "title": "المناسبات",
+    "myEvents": "مناسباتي",
+    "invitations": "الدعوات",
+    "upcoming": "القادمة",
+    "past": "السابقة",
+    "hosting": "أستضيف",
+    "attending": "أحضر",
+    "create": "إنشاء مناسبة",
+    "details": "تفاصيل المناسبة",
+    "empty": {
+      "title": "لا توجد مناسبات بعد",
+      "message": "أنشئ مناسبتك الأولى أو انتظر الدعوات",
+      "action": "إنشاء مناسبة"
+    },
+    "form": {
+      "title": "عنوان المناسبة",
+      "titleAr": "عنوان المناسبة (بالعربية)",
+      "description": "الوصف",
+      "descriptionAr": "الوصف (بالعربية)",
+      "location": "الموقع",
+      "startDate": "تاريخ البدء",
+      "endDate": "تاريخ الانتهاء",
+      "startTime": "وقت البدء",
+      "endTime": "وقت الانتهاء",
+      "eventType": "نوع المناسبة",
+      "genderRestriction": "تقييد الجنس",
+      "mixedAllowed": "مختلط",
+      "maleOnly": "رجال فقط",
+      "femaleOnly": "نساء فقط",
+      "coverImage": "صورة الغلاف",
+      "addCover": "إضافة صورة غلاف"
+    },
+    "types": {
+      "wedding": "زفاف",
+      "birthday": "عيد ميلاد",
+      "graduation": "تخرج",
+      "baby_shower": "استقبال مولود",
+      "engagement": "خطوبة",
+      "corporate": "شركات",
+      "social": "اجتماعي",
+      "religious": "ديني",
+      "other": "أخرى"
+    },
+    "rsvp": {
+      "title": "الرد على الدعوة",
+      "accept": "قبول",
+      "decline": "اعتذار",
+      "maybe": "ربما",
+      "attending": "ستحضر",
+      "notAttending": "لن تحضر",
+      "pending": "في انتظار الرد"
+    },
+    "guests": {
+      "title": "قائمة الضيوف",
+      "invited": "مدعو",
+      "accepted": "قبلوا",
+      "declined": "اعتذروا",
+      "pending": "في الانتظار",
+      "addGuests": "إضافة ضيوف",
+      "sendInvitations": "إرسال الدعوات",
+      "empty": {
+        "title": "لا يوجد ضيوف بعد",
+        "message": "أضف ضيوفاً لإرسال الدعوات"
+      }
+    },
+    "sessions": {
+      "title": "الجلسات",
+      "add": "إضافة جلسة",
+      "name": "اسم الجلسة",
+      "time": "الوقت",
+      "empty": "لم تُضف جلسات"
+    },
+    "invitation": {
+      "preview": "معاينة الدعوة",
+      "send": "إرسال الدعوة",
+      "youreInvited": "أنت مدعو",
+      "respondMessage": "يرجى الرد لإعلامنا بحضورك"
+    }
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "editProfile": "تعديل الملف",
+    "settings": "الإعدادات",
+    "myEvents": "مناسباتي",
+    "importantDates": "تواريخ مهمة",
+    "blockedUsers": "المستخدمون المحظورون",
+    "logout": "تسجيل الخروج",
+    "logoutConfirm": "هل أنت متأكد من تسجيل الخروج؟",
+    "edit": {
+      "title": "تعديل الملف الشخصي",
+      "firstName": "الاسم الأول",
+      "lastName": "اسم العائلة",
+      "phone": "رقم الهاتف",
+      "phoneNote": "لا يمكن تغيير رقم الهاتف",
+      "gender": "الجنس",
+      "genderNote": "لا يمكن تغيير الجنس بعد التسجيل",
+      "changePhoto": "تغيير الصورة"
+    },
+    "dates": {
+      "title": "تواريخ مهمة",
+      "add": "إضافة تاريخ",
+      "empty": {
+        "title": "لا توجد تواريخ مهمة",
+        "message": "أضف أعياد الميلاد والذكريات والتواريخ المميزة للتذكير"
+      },
+      "types": {
+        "birthday": "عيد ميلاد",
+        "anniversary": "ذكرى سنوية",
+        "other": "أخرى"
+      }
+    },
+    "blocked": {
+      "title": "المستخدمون المحظورون",
+      "unblock": "إلغاء الحظر",
+      "empty": {
+        "title": "لا يوجد مستخدمون محظورون",
+        "message": "المستخدمون الذين تحظرهم لن يتمكنوا من دعوتك أو رؤية ملفك"
+      },
+      "confirmUnblock": "هل أنت متأكد من إلغاء حظر {{name}}؟"
+    }
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "language": "اللغة",
+    "notifications": "الإشعارات",
+    "privacy": "الخصوصية",
+    "about": "حول التطبيق",
+    "version": "الإصدار",
+    "terms": "شروط الخدمة",
+    "privacyPolicy": "سياسة الخصوصية",
+    "contact": "تواصل معنا",
+    "languages": {
+      "english": "English",
+      "arabic": "العربية"
+    }
+  },
+  "invitations": {
+    "title": "الدعوات",
+    "filters": {
+      "all": "الكل",
+      "pending": "في الانتظار",
+      "accepted": "مقبولة",
+      "maybe": "ربما",
+      "declined": "مرفوضة"
+    },
+    "tapToRespond": "اضغط للرد",
+    "empty": {
+      "noInvitations": "لا توجد دعوات بعد",
+      "noFiltered": "لا توجد دعوات {{filter}}",
+      "description": "عندما يدعوك أحد لمناسبة، ستظهر هنا"
+    }
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": {
+      "title": "لا توجد إشعارات",
+      "message": "لا توجد إشعارات جديدة"
+    },
+    "markAllRead": "تحديد الكل كمقروء",
+    "types": {
+      "invitation": "دعوة جديدة",
+      "rsvp": "تحديث الرد",
+      "reminder": "تذكير بالمناسبة",
+      "update": "تحديث المناسبة"
+    }
+  },
+  "errors": {
+    "network": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
+    "server": "خطأ في الخادم. يرجى المحاولة لاحقاً.",
+    "invalidPhone": "يرجى إدخال رقم هاتف صحيح",
+    "invalidOtp": "رمز التحقق غير صحيح",
+    "required": "هذا الحقل مطلوب",
+    "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  },
+  "create": {
+    "eventCreated": "تم إنشاء المناسبة بنجاح!",
+    "step1": {
+      "title": "نوع المناسبة",
+      "subtitle": "ما نوع المناسبة التي تخطط لها؟"
+    },
+    "step2": {
+      "title": "تفاصيل المناسبة",
+      "subtitle": "أخبرنا عن مناسبتك",
+      "titlePlaceholder": "أدخل عنوان المناسبة",
+      "titleArPlaceholder": "أدخل عنوان المناسبة بالعربية",
+      "descriptionPlaceholder": "أضف وصفاً لمناسبتك..."
+    },
+    "step3": {
+      "title": "الموعد والمكان",
+      "subtitle": "حدد التاريخ والوقت والموقع",
+      "addEndDate": "إضافة تاريخ ووقت الانتهاء",
+      "selectDate": "اختر التاريخ",
+      "selectTime": "اختر الوقت",
+      "locationPlaceholder": "أدخل الموقع أو المكان"
+    },
+    "step4": {
+      "title": "تصميم الدعوة",
+      "subtitle": "اختر تصميماً جميلاً لدعواتك",
+      "selectTemplate": "اختر قالباً",
+      "customizeColor": "تخصيص اللون",
+      "customMessage": "رسالة مخصصة",
+      "customMessagePlaceholder": "أضف رسالة شخصية لدعوتك...",
+      "template": "القالب"
+    },
+    "step5": {
+      "title": "التفاصيل الأخيرة",
+      "subtitle": "مراجعة وإضافة اللمسات الأخيرة",
+      "review": "ملخص المراجعة"
+    }
+  }
+}

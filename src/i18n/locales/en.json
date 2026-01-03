@@ -1,0 +1,360 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "done": "Done",
+    "next": "Next",
+    "back": "Back",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "retry": "Retry",
+    "search": "Search",
+    "noResults": "No results found",
+    "poweredBy": "Powered by Betakah",
+    "guest": "Guest"
+  },
+  "auth": {
+    "skip": "Skip",
+    "onboarding": {
+      "slide1": {
+        "title": "Create Private Events",
+        "description": "Plan weddings, birthdays, and gatherings with complete privacy"
+      },
+      "slide2": {
+        "title": "Beautiful Invitations",
+        "description": "Send stunning digital invitations that reflect your style"
+      },
+      "slide3": {
+        "title": "Manage Guest Lists",
+        "description": "Track RSVPs and manage attendance effortlessly"
+      },
+      "slide4": {
+        "title": "Privacy First",
+        "description": "Your events stay private, shared only with those you choose"
+      },
+      "next": "Next",
+      "getStarted": "Get Started"
+    },
+    "welcome": {
+      "title": "Welcome to Betakah",
+      "subtitle": "Your private events, beautifully managed",
+      "getStarted": "Get Started",
+      "features": {
+        "events": "Create & manage private events",
+        "invitations": "Send beautiful digital invitations",
+        "guestList": "Track RSVPs in real-time",
+        "privacy": "Keep your events private & secure"
+      }
+    },
+    "phone": {
+      "title": "Phone Number",
+      "subtitle": "We'll send you a verification code via SMS",
+      "placeholder": "5000 0000",
+      "helperText": "Enter your 8-digit Qatar phone number",
+      "continue": "Continue",
+      "countryCode": "+974",
+      "terms": "By continuing, you agree to our Terms"
+    },
+    "otp": {
+      "title": "Verification Code",
+      "subtitle": "Enter the code sent to {{phoneNumber}}",
+      "resend": "Resend Code",
+      "resendIn": "Resend in {{seconds}}s",
+      "verify": "Verify",
+      "didntReceive": "Didn't receive the code?",
+      "testHint": "For testing: use 000000"
+    },
+    "registration": {
+      "title": "Create Account",
+      "subtitle": "Enter your details to continue",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "firstNamePlaceholder": "Enter your first name",
+      "lastNamePlaceholder": "Enter your last name",
+      "gender": "Gender",
+      "male": "Male",
+      "female": "Female",
+      "birthday": "Date of Birth",
+      "birthdayPlaceholder": "Select your date of birth",
+      "birthdayStep": {
+        "title": "Important Dates",
+        "subtitle": "Add dates you'd like to remember"
+      },
+      "dates": {
+        "birthday": "Your Birthday",
+        "selectDate": "Select date",
+        "addDate": "Add date",
+        "optionalTitle": "Optional",
+        "marriage": "Marriage Anniversary",
+        "partnerBirthday": "Partner's Birthday",
+        "kidBirthday": "Child {{number}}'s Birthday",
+        "addKid": "Add Child's Birthday"
+      },
+      "next": "Next",
+      "createAccount": "Create Account",
+      "idVerification": {
+        "title": "Verify Your Identity",
+        "subtitle": "Take a photo of your Qatar ID or passport",
+        "takePhoto": "Take Photo",
+        "retake": "Retake Photo",
+        "privacyNote": "Your ID is only used for verification and will not be shared",
+        "idCaptured": "ID Photo Captured"
+      }
+    },
+    "pending": {
+      "title": "Verification Pending",
+      "subtitle": "Your account is being reviewed",
+      "message": "We'll notify you once your account is verified. This usually takes less than 24 hours.",
+      "contact": "Contact Support"
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good Morning",
+      "afternoon": "Good Afternoon",
+      "evening": "Good Evening"
+    },
+    "upcomingEvents": "Upcoming Events",
+    "pendingInvitations": "Pending Invitations",
+    "upcomingDates": "Important Dates",
+    "noEvents": "No upcoming events",
+    "noDates": "No upcoming dates",
+    "createFirst": "Create your first event",
+    "addDates": "Add Date",
+    "addDatesDesc": "Track birthdays, anniversaries and special occasions",
+    "viewAll": "View All",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "day": "day",
+    "daysLeft": "days",
+    "inDays": "In {{count}} days",
+    "createEventDesc": "Start planning your next special occasion",
+    "swipeToSee": "Swipe to see more",
+    "fromHost": "From {{name}}",
+    "createEvent": "Create Event",
+    "createEventSubtitle": "Start planning your next gathering"
+  },
+  "dates": {
+    "birthday": "Birthday",
+    "anniversary": "Anniversary",
+    "special": "Special"
+  },
+  "events": {
+    "title": "Events",
+    "myEvents": "My Events",
+    "invitations": "Invitations",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "hosting": "Hosting",
+    "attending": "Attending",
+    "create": "Create Event",
+    "details": "Event Details",
+    "empty": {
+      "title": "No events yet",
+      "message": "Create your first event or wait for invitations",
+      "action": "Create Event"
+    },
+    "form": {
+      "title": "Event Title",
+      "titleAr": "Event Title (Arabic)",
+      "description": "Description",
+      "descriptionAr": "Description (Arabic)",
+      "location": "Location",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "eventType": "Event Type",
+      "genderRestriction": "Gender Restriction",
+      "mixedAllowed": "Mixed",
+      "maleOnly": "Male Only",
+      "femaleOnly": "Female Only",
+      "coverImage": "Cover Image",
+      "addCover": "Add Cover Photo"
+    },
+    "types": {
+      "wedding": "Wedding",
+      "birthday": "Birthday",
+      "graduation": "Graduation",
+      "baby_shower": "Baby Shower",
+      "engagement": "Engagement",
+      "corporate": "Corporate",
+      "social": "Social",
+      "religious": "Religious",
+      "other": "Other"
+    },
+    "rsvp": {
+      "title": "RSVP",
+      "accept": "Accept",
+      "decline": "Decline",
+      "maybe": "Maybe",
+      "attending": "You're attending",
+      "notAttending": "You're not attending",
+      "pending": "Pending response"
+    },
+    "guests": {
+      "title": "Guest List",
+      "invited": "Invited",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "pending": "Pending",
+      "addGuests": "Add Guests",
+      "sendInvitations": "Send Invitations",
+      "empty": {
+        "title": "No guests yet",
+        "message": "Add guests to send invitations"
+      }
+    },
+    "sessions": {
+      "title": "Sessions",
+      "add": "Add Session",
+      "name": "Session Name",
+      "time": "Time",
+      "empty": "No sessions added"
+    },
+    "invitation": {
+      "preview": "Preview Invitation",
+      "send": "Send Invitation",
+      "youreInvited": "YOU'RE INVITED",
+      "respondMessage": "Please respond to let us know if you can attend"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "settings": "Settings",
+    "myEvents": "My Events",
+    "importantDates": "Important Dates",
+    "blockedUsers": "Blocked Users",
+    "logout": "Log Out",
+    "logoutConfirm": "Are you sure you want to log out?",
+    "edit": {
+      "title": "Edit Profile",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "phone": "Phone Number",
+      "phoneNote": "Phone number cannot be changed",
+      "gender": "Gender",
+      "genderNote": "Gender cannot be changed after registration",
+      "changePhoto": "Change Photo"
+    },
+    "dates": {
+      "title": "Important Dates",
+      "add": "Add Date",
+      "empty": {
+        "title": "No important dates",
+        "message": "Add birthdays, anniversaries, and other special dates to get reminded"
+      },
+      "types": {
+        "birthday": "Birthday",
+        "anniversary": "Anniversary",
+        "other": "Other"
+      }
+    },
+    "blocked": {
+      "title": "Blocked Users",
+      "unblock": "Unblock",
+      "empty": {
+        "title": "No blocked users",
+        "message": "Users you block won't be able to invite you to their events or see your profile"
+      },
+      "confirmUnblock": "Are you sure you want to unblock {{name}}?"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "about": "About",
+    "version": "Version",
+    "terms": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "contact": "Contact Us",
+    "languages": {
+      "english": "English",
+      "arabic": "العربية"
+    }
+  },
+  "invitations": {
+    "title": "Invitations",
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "maybe": "Maybe",
+      "declined": "Declined"
+    },
+    "tapToRespond": "Tap to respond",
+    "empty": {
+      "noInvitations": "No invitations yet",
+      "noFiltered": "No {{filter}} invitations",
+      "description": "When someone invites you to an event, it will appear here"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": {
+      "title": "No notifications",
+      "message": "You're all caught up!"
+    },
+    "markAllRead": "Mark all as read",
+    "types": {
+      "invitation": "New Invitation",
+      "rsvp": "RSVP Update",
+      "reminder": "Event Reminder",
+      "update": "Event Update"
+    }
+  },
+  "errors": {
+    "network": "Network error. Please check your connection.",
+    "server": "Server error. Please try again later.",
+    "invalidPhone": "Please enter a valid phone number",
+    "invalidOtp": "Invalid verification code",
+    "required": "This field is required",
+    "generic": "Something went wrong. Please try again."
+  },
+  "create": {
+    "eventCreated": "Event created successfully!",
+    "step1": {
+      "title": "Event Type",
+      "subtitle": "What kind of event are you planning?"
+    },
+    "step2": {
+      "title": "Event Details",
+      "subtitle": "Tell us about your event",
+      "titlePlaceholder": "Enter event title",
+      "titleArPlaceholder": "أدخل عنوان المناسبة",
+      "descriptionPlaceholder": "Add a description for your event..."
+    },
+    "step3": {
+      "title": "When & Where",
+      "subtitle": "Set the date, time, and location",
+      "addEndDate": "Add end date & time",
+      "selectDate": "Select date",
+      "selectTime": "Select time",
+      "locationPlaceholder": "Enter location or venue"
+    },
+    "step4": {
+      "title": "Invitation Theme",
+      "subtitle": "Choose a beautiful design for your invitations",
+      "selectTemplate": "Select a Template",
+      "customizeColor": "Customize Color",
+      "customMessage": "Custom Message",
+      "customMessagePlaceholder": "Add a personal message to your invitation...",
+      "template": "Template"
+    },
+    "step5": {
+      "title": "Final Details",
+      "subtitle": "Review and add finishing touches",
+      "review": "Review Summary"
+    }
+  }
+}
