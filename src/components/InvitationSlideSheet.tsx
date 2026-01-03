@@ -174,10 +174,7 @@ export function InvitationSlideSheet({
           {/* Content */}
           <ScrollView
             style={styles.sheetContent}
-            contentContainerStyle={[
-              styles.sheetContentContainer,
-              { paddingBottom: isPreview ? Math.max(insets.bottom + 24, 40) : Math.max(insets.bottom + 100, 120) }
-            ]}
+            contentContainerStyle={styles.sheetContentContainer}
             showsVerticalScrollIndicator={false}
           >
             {event && template && (
@@ -191,9 +188,9 @@ export function InvitationSlideSheet({
             )}
           </ScrollView>
 
-          {/* Fixed RSVP Buttons at bottom - only show when not in preview mode */}
+          {/* RSVP Buttons - only show when not in preview mode */}
           {!isPreview && (
-            <View style={[styles.rsvpFooter, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+            <View style={[styles.rsvpFooter, { paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
               {currentStatus && currentStatus !== 'PENDING' && (
                 <View style={[
                   styles.sheetStatusBadge,
@@ -332,10 +329,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rsvpFooter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: Colors.gray[100],
     paddingHorizontal: 20,
     paddingTop: 16,

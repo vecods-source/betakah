@@ -1,75 +1,201 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAppDispatch, useLocalization } from '../../../src/hooks';
-import { logout } from '../../../src/store/slices/authSlice';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Switch,
+  Linking,
+} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { useLocalization } from '../../../src/hooks';
+import { UIHeader } from '../../../src/components/ui';
 import { Colors } from '../../../src/constants/colors';
-import { UIBackButton } from '../../../src/components/ui';
 
 export default function SettingsScreen() {
-  const router = useRouter();
-  const dispatch = useAppDispatch();
+  const { t, i18n } = useTranslation();
   const { isArabic, setLanguage } = useLocalization();
+  const isRTL = i18n.language === 'ar';
 
-  const handleLogout = () => {
-    Alert.alert(
-      isArabic ? 'تسجيل الخروج' : 'Logout',
-      isArabic ? 'هل أنت متأكد؟' : 'Are you sure you want to logout?',
-      [
-        { text: isArabic ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        {
-          text: isArabic ? 'خروج' : 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            await dispatch(logout());
-            router.replace('/(auth)');
-          },
-        },
-      ]
-    );
-  };
+  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
 
-  const handleLanguageChange = async () => {
+  const handleLanguageToggle = async () => {
     await setLanguage(isArabic ? 'en' : 'ar');
   };
 
+  const settingsSections = [
+    {
+      title: t('settings.title'),
+      items: [
+        {
+          id: 'language',
+          label: t('settings.language'),
+          icon: 'globe',
+          type: 'toggle',
+          value: isArabic,
+          valueLabel: isArabic ? 'العربية' : 'English',
+          onToggle: handleLanguageToggle,
+        },
+        {
+          id: 'notifications',
+          label: t('settings.notifications'),
+          icon: 'bell',
+          type: 'switch',
+          value: notificationsEnabled,
+          onToggle: () => setNotificationsEnabled(!notificationsEnabled),
+        },
+      ],
+    },
+    {
+      title: t('settings.about'),
+      items: [
+        {
+          id: 'privacy',
+          label: t('settings.privacyPolicy'),
+          icon: 'shield',
+          type: 'link',
+          onPress: () => Linking.openURL('https://betakah.app/privacy'),
+        },
+        {
+          id: 'terms',
+          label: t('settings.terms'),
+          icon: 'file-text',
+          type: 'link',
+          onPress: () => Linking.openURL('https://betakah.app/terms'),
+        },
+        {
+          id: 'contact',
+          label: t('settings.contact'),
+          icon: 'mail',
+          type: 'link',
+          onPress: () => Linking.openURL('mailto:support@betakah.app'),
+        },
+      ],
+    },
+  ];
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <UIBackButton style={styles.backButton} />
-        <Text style={[styles.title, isArabic && styles.textRTL]}>{isArabic ? 'الإعدادات' : 'Settings'}</Text>
-      </View>
+      <UIHeader title={t('settings.title')} />
 
-      <ScrollView style={styles.content}>
-        <TouchableOpacity style={styles.menuItem} onPress={handleLanguageChange}>
-          <Text style={styles.menuIcon}>🌐</Text>
-          <View style={styles.menuContent}>
-            <Text style={styles.menuLabel}>{isArabic ? 'اللغة' : 'Language'}</Text>
-            <Text style={styles.menuValue}>{isArabic ? 'العربية' : 'English'}</Text>
+      {/* Settings Sections */}
+      {settingsSections.map((section) => (
+        <View key={section.title} style={styles.section}>
+          <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+            {section.title}
+          </Text>
+          <View style={styles.sectionCard}>
+            {section.items.map((item, index) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.settingItem,
+                  index < section.items.length - 1 && styles.settingItemBorder,
+                ]}
+                onPress={item.type === 'link' ? item.onPress : item.onToggle}
+                activeOpacity={0.7}
+              >
+                <Feather
+                  name={item.icon as any}
+                  size={20}
+                  color={Colors.gray[600]}
+                />
+                <Text style={[styles.settingLabel, isRTL && styles.textRTL]}>
+                  {item.label}
+                </Text>
+                {item.type === 'toggle' ? (
+                  <View style={styles.toggleContainer}>
+                    <Text style={styles.toggleValue}>{item.valueLabel}</Text>
+                    <Switch
+                      value={item.value}
+                      onValueChange={item.onToggle}
+                      trackColor={{ false: Colors.gray[300], true: Colors.primary }}
+                      thumbColor="#fff"
+                    />
+                  </View>
+                ) : item.type === 'switch' ? (
+                  <Switch
+                    value={item.value}
+                    onValueChange={item.onToggle}
+                    trackColor={{ false: Colors.gray[300], true: Colors.primary }}
+                    thumbColor="#fff"
+                  />
+                ) : (
+                  <Feather
+                    name={isRTL ? 'chevron-left' : 'chevron-right'}
+                    size={20}
+                    color={Colors.gray[400]}
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
-        </TouchableOpacity>
+        </View>
+      ))}
 
-        <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
-          <Text style={styles.menuIcon}>🚪</Text>
-          <Text style={styles.logoutText}>{isArabic ? 'تسجيل الخروج' : 'Logout'}</Text>
-        </TouchableOpacity>
-      </ScrollView>
+      {/* Version */}
+      <Text style={styles.versionText}>{t('settings.version')} 1.0.0</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.gray[50] },
-  header: { backgroundColor: Colors.white, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.gray[200] },
-  backButton: { marginBottom: 12 },
-  title: { fontSize: 28, fontWeight: '700', color: Colors.black },
-  textRTL: { textAlign: 'right', writingDirection: 'rtl' },
-  content: { flex: 1, padding: 16 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderRadius: 12, padding: 16, marginBottom: 8 },
-  menuIcon: { fontSize: 20, marginRight: 12 },
-  menuContent: { flex: 1 },
-  menuLabel: { fontSize: 16, fontWeight: '500', color: Colors.black },
-  menuValue: { fontSize: 14, color: Colors.gray[500], marginTop: 2 },
-  logoutItem: { marginTop: 24 },
-  logoutText: { fontSize: 16, fontWeight: '600', color: Colors.error },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.gray[50],
+  },
+  section: {
+    marginTop: 24,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.gray[500],
+    marginBottom: 10,
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sectionCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 14,
+  },
+  settingItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[100],
+  },
+  settingLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.black,
+  },
+  textRTL: {
+    textAlign: 'right',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  toggleValue: {
+    fontSize: 14,
+    color: Colors.gray[500],
+  },
+  versionText: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: Colors.gray[400],
+    marginTop: 'auto',
+    paddingBottom: 100,
+  },
 });

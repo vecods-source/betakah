@@ -1,40 +1,50 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalization } from '../../hooks';
+import { Colors } from '../../constants/colors';
 
 interface UIHeaderProps {
   title: string;
   onBack?: () => void;
-  rightAction?: {
-    label?: string;
-    icon?: string;
-    onPress: () => void;
-  };
+  showBack?: boolean;
+  rightAction?: React.ReactNode;
 }
 
-export function UIHeader({ title, onBack, rightAction }: UIHeaderProps) {
+export function UIHeader({ title, onBack, showBack = true, rightAction }: UIHeaderProps) {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isRTL } = useLocalization();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
+  };
+
   return (
-    <View style={styles.header}>
-      {onBack ? (
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <MaterialCommunityIcons name="chevron-left" size={24} color="#2c5282" />
-          <Text style={styles.backText}>Back</Text>
+    <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      {showBack ? (
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBack}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backArrow}>{isRTL ? '→' : '←'}</Text>
         </TouchableOpacity>
       ) : (
-        <View style={styles.placeholder} />
+        <View style={styles.spacer} />
       )}
 
       <Text style={styles.title}>{title}</Text>
 
       {rightAction ? (
-        <TouchableOpacity style={styles.rightAction} onPress={rightAction.onPress}>
-          {rightAction.icon && (
-            <MaterialCommunityIcons name={rightAction.icon as any} size={20} color="#2c5282" />
-          )}
-          {rightAction.label && <Text style={styles.rightText}>{rightAction.label}</Text>}
-        </TouchableOpacity>
+        <View style={styles.rightContainer}>{rightAction}</View>
       ) : (
-        <View style={styles.placeholder} />
+        <View style={styles.spacer} />
       )}
     </View>
   );
@@ -44,37 +54,35 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingBottom: 12,
+    backgroundColor: Colors.gray[50],
   },
   backButton: {
-    flexDirection: 'row',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.gray[100],
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  backText: {
-    color: '#2c5282',
-    fontSize: 16,
-    marginLeft: 4,
+  backArrow: {
+    fontSize: 20,
+    color: Colors.black,
+    fontWeight: '600',
   },
   title: {
+    flex: 1,
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a202c',
+    color: Colors.black,
+    textAlign: 'center',
   },
-  rightAction: {
-    flexDirection: 'row',
+  spacer: {
+    width: 44,
+  },
+  rightContainer: {
+    width: 44,
     alignItems: 'center',
-  },
-  rightText: {
-    color: '#2c5282',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  placeholder: {
-    width: 60,
   },
 });

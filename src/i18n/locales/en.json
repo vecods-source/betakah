@@ -195,9 +195,11 @@
       "accept": "Accept",
       "decline": "Decline",
       "maybe": "Maybe",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "pending": "Pending",
       "attending": "You're attending",
-      "notAttending": "You're not attending",
-      "pending": "Pending response"
+      "notAttending": "You're not attending"
     },
     "guests": {
       "title": "Guest List",

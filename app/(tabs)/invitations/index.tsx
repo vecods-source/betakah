@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
@@ -9,9 +10,9 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { useAppSelector } from '../../../src/hooks';
 import { Invitation } from '../../../src/types';
-import { UIText, UIIcon, UIBadge } from '../../../src/components/ui';
 import { InvitationSlideSheet } from '../../../src/components/InvitationSlideSheet';
 import { Colors } from '../../../src/constants/colors';
 
@@ -64,15 +65,6 @@ export default function InvitationsScreen() {
     { key: 'DECLINED', label: t('invitations.filters.declined') },
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACCEPTED': return '#38A169';
-      case 'DECLINED': return '#E53E3E';
-      case 'MAYBE': return '#DD6B20';
-      default: return Colors.primary;
-    }
-  };
-
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'ACCEPTED': return t('events.rsvp.accepted');
@@ -87,7 +79,6 @@ export default function InvitationsScreen() {
     if (!event) return null;
 
     const daysUntil = getDaysUntil(event.startDate);
-    const statusColor = getStatusColor(invitation.rsvpStatus);
 
     return (
       <TouchableOpacity
@@ -97,60 +88,48 @@ export default function InvitationsScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.cardContent}>
+          {/* Event Type & Status */}
           <View style={styles.cardHeader}>
-            <UIBadge variant="info">{event.type.replace('_', ' ')}</UIBadge>
-            <View style={[styles.statusBadge, { backgroundColor: `${statusColor}15` }]}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-              <UIText size={12} weight="medium" color={statusColor}>
-                {getStatusLabel(invitation.rsvpStatus)}
-              </UIText>
-            </View>
+            <Text style={styles.eventType}>{event.type.replace('_', ' ')}</Text>
+            <Text style={[
+              styles.statusText,
+              invitation.rsvpStatus === 'ACCEPTED' && styles.statusAccepted,
+              invitation.rsvpStatus === 'DECLINED' && styles.statusDeclined,
+              invitation.rsvpStatus === 'MAYBE' && styles.statusMaybe,
+            ]}>
+              {getStatusLabel(invitation.rsvpStatus)}
+            </Text>
           </View>
 
-          <UIText size={17} weight="semibold" color="#1a202c" style={styles.cardTitle}>
-            {event.title}
-          </UIText>
+          {/* Title */}
+          <Text style={styles.cardTitle}>{event.title}</Text>
 
-          <View style={styles.hostRow}>
-            <UIIcon name="person.fill" color="#718096" size={14} />
-            <UIText size={13} color="#718096" style={styles.hostName}>
-              {`${event.host?.firstName || ''} ${event.host?.lastName || ''}`.trim()}
-            </UIText>
-          </View>
+          {/* Host */}
+          <Text style={styles.hostText}>
+            {t('home.fromHost', { name: `${event.host?.firstName || ''} ${event.host?.lastName || ''}`.trim() })}
+          </Text>
 
+          {/* Date & Location */}
           <View style={styles.cardMeta}>
-            <View style={styles.metaItem}>
-              <UIIcon name="calendar" color="#718096" size={14} />
-              <UIText size={13} color="#718096">
-                {new Date(event.startDate).toLocaleDateString('en-QA', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </UIText>
-            </View>
-            <View style={styles.metaItem}>
-              <UIIcon name="mappin" color="#718096" size={14} />
-              <UIText size={13} color="#718096" numberOfLines={1} style={styles.locationText}>
-                {event.location || t('events.form.location')}
-              </UIText>
-            </View>
+            <Text style={styles.metaText}>
+              {new Date(event.startDate).toLocaleDateString('en-QA', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+              })}
+              {event.location ? ` · ${event.location}` : ''}
+            </Text>
+            {daysUntil >= 0 && daysUntil <= 7 && (
+              <Text style={styles.daysText}>
+                {daysUntil === 0 ? t('home.today') : daysUntil === 1 ? t('home.tomorrow') : `${daysUntil} ${t('home.daysLeft')}`}
+              </Text>
+            )}
           </View>
 
+          {/* Pending Action */}
           {invitation.rsvpStatus === 'PENDING' && (
             <View style={styles.pendingAction}>
-              <UIText size={13} weight="medium" color={Colors.primary}>
-                {t('invitations.tapToRespond')}
-              </UIText>
-              <UIIcon name="chevron.right" color={Colors.primary} size={14} />
-            </View>
-          )}
-
-          {daysUntil >= 0 && daysUntil <= 7 && (
-            <View style={styles.daysChip}>
-              <UIText size={12} weight="semibold" color={daysUntil <= 1 ? '#E53E3E' : Colors.primary}>
-                {daysUntil === 0 ? t('home.today') : daysUntil === 1 ? t('home.tomorrow') : `${daysUntil} days left`}
-              </UIText>
+              <Text style={styles.pendingText}>{t('invitations.tapToRespond')}</Text>
             </View>
           )}
         </View>
@@ -161,15 +140,11 @@ export default function InvitationsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <UIText size={28} weight="bold" color="#1a202c">
-          {t('invitations.title')}
-        </UIText>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.headerTitle}>{t('invitations.title')}</Text>
         {filterCounts.PENDING > 0 && (
           <View style={styles.pendingBadge}>
-            <UIText size={13} weight="semibold" color="#fff">
-              {filterCounts.PENDING}
-            </UIText>
+            <Text style={styles.pendingBadgeText}>{filterCounts.PENDING}</Text>
           </View>
         )}
       </View>
@@ -190,27 +165,12 @@ export default function InvitationsScreen() {
             ]}
             onPress={() => setActiveFilter(filter.key)}
           >
-            <UIText
-              size={14}
-              weight={activeFilter === filter.key ? 'semibold' : 'regular'}
-              color={activeFilter === filter.key ? '#fff' : '#4a5568'}
-            >
+            <Text style={[
+              styles.filterText,
+              activeFilter === filter.key && styles.filterTextActive,
+            ]}>
               {filter.label}
-            </UIText>
-            {filterCounts[filter.key] > 0 && (
-              <View style={[
-                styles.filterCount,
-                activeFilter === filter.key && styles.filterCountActive,
-              ]}>
-                <UIText
-                  size={11}
-                  weight="semibold"
-                  color={activeFilter === filter.key ? Colors.primary : '#718096'}
-                >
-                  {filterCounts[filter.key]}
-                </UIText>
-              </View>
-            )}
+            </Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -223,7 +183,6 @@ export default function InvitationsScreen() {
           <RefreshControl
             refreshing={isLoading}
             tintColor={Colors.primary}
-            colors={[Colors.primary]}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -234,15 +193,15 @@ export default function InvitationsScreen() {
           </View>
         ) : (
           <View style={styles.emptyState}>
-            <UIIcon name="envelope" color="#CBD5E0" size={48} />
-            <UIText size={16} weight="medium" color="#718096" style={styles.emptyTitle}>
+            <Feather name="mail" size={48} color={Colors.gray[300]} />
+            <Text style={styles.emptyTitle}>
               {activeFilter === 'ALL'
                 ? t('invitations.empty.noInvitations')
-                : t('invitations.empty.noFiltered')}
-            </UIText>
-            <UIText size={14} color="#a0aec0" style={styles.emptySubtitle}>
+                : t('invitations.empty.noFiltered', { filter: filters.find(f => f.key === activeFilter)?.label.toLowerCase() })}
+            </Text>
+            <Text style={styles.emptySubtitle}>
               {t('invitations.empty.description')}
-            </UIText>
+            </Text>
           </View>
         )}
 
@@ -262,54 +221,61 @@ export default function InvitationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7fafc',
+    backgroundColor: Colors.gray[50],
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: '#f7fafc',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.black,
   },
   pendingBadge: {
     marginLeft: 10,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.gray[200],
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
+  pendingBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.gray[700],
+  },
   filtersContainer: {
-    maxHeight: 50,
-    backgroundColor: '#f7fafc',
+    maxHeight: 44,
   },
   filtersContent: {
     paddingHorizontal: 16,
     gap: 8,
     flexDirection: 'row',
+    justifyContent: 'center',
+    flex: 1,
   },
   filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterChipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.black,
   },
-  filterCount: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+  filterText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.gray[600],
+    lineHeight: 14,
+    includeFontPadding: false,
   },
-  filterCountActive: {
-    backgroundColor: '#fff',
+  filterTextActive: {
+    color: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -323,12 +289,7 @@ const styles = StyleSheet.create({
   },
   invitationCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: 12,
   },
   cardContent: {
     padding: 16,
@@ -337,65 +298,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 6,
+  eventType: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.gray[500],
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+  statusAccepted: {
+    color: '#22C55E',
+  },
+  statusDeclined: {
+    color: '#EF4444',
+  },
+  statusMaybe: {
+    color: '#F59E0B',
   },
   cardTitle: {
-    marginBottom: 8,
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.black,
+    marginBottom: 6,
   },
-  hostRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  hostText: {
+    fontSize: 13,
+    color: Colors.gray[500],
     marginBottom: 12,
-  },
-  hostName: {
-    flex: 1,
   },
   cardMeta: {
     flexDirection: 'row',
-    gap: 16,
-  },
-  metaItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'space-between',
   },
-  locationText: {
-    maxWidth: 150,
+  metaText: {
+    fontSize: 13,
+    color: Colors.gray[500],
+  },
+  daysText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.gray[600],
   },
   pendingAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
     marginTop: 14,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: Colors.gray[100],
+    alignItems: 'center',
   },
-  daysChip: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: '#fff',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+  pendingText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.primary,
   },
   emptyState: {
     alignItems: 'center',
@@ -405,10 +366,15 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.gray[500],
     textAlign: 'center',
   },
   emptySubtitle: {
     marginTop: 8,
+    fontSize: 14,
+    color: Colors.gray[400],
     textAlign: 'center',
   },
   bottomSpacer: {

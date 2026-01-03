@@ -195,9 +195,11 @@
       "accept": "قبول",
       "decline": "اعتذار",
       "maybe": "ربما",
+      "accepted": "مؤكد",
+      "declined": "معتذر",
+      "pending": "في الانتظار",
       "attending": "ستحضر",
-      "notAttending": "لن تحضر",
-      "pending": "في انتظار الرد"
+      "notAttending": "لن تحضر"
     },
     "guests": {
       "title": "قائمة الضيوف",
