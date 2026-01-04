@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalization } from '../../hooks';
+import { useLocalization, useTheme } from '../../hooks';
 import { Colors } from '../../constants/colors';
 
 interface UIHeaderProps {
@@ -16,6 +16,7 @@ export function UIHeader({ title, onBack, showBack = true, rightAction }: UIHead
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isRTL } = useLocalization();
+  const { isDark, colors, screenBackground, textPrimary } = useTheme();
 
   const handleBack = () => {
     if (onBack) {
@@ -26,20 +27,20 @@ export function UIHeader({ title, onBack, showBack = true, rightAction }: UIHead
   };
 
   return (
-    <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+    <View style={[styles.header, { paddingTop: insets.top + 12, backgroundColor: screenBackground }]}>
       {showBack ? (
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: isDark ? colors.gray[200] : colors.gray[100] }]}
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Text style={styles.backArrow}>{isRTL ? '→' : '←'}</Text>
+          <Text style={[styles.backArrow, { color: textPrimary }]}>{isRTL ? '→' : '←'}</Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.spacer} />
       )}
 
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[styles.title, { color: textPrimary }]}>{title}</Text>
 
       {rightAction ? (
         <View style={styles.rightContainer}>{rightAction}</View>

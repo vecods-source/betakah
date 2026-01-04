@@ -61,8 +61,8 @@ export default function OTPVerificationScreen() {
           <UIBackButton style={styles.backButton} />
 
           <View style={styles.headerContainer}>
-            <Text style={[styles.title, isRTL && styles.textRTL]}>{t('auth.otp.title')}</Text>
-            <Text style={[styles.subtitle, isRTL && styles.textRTL]}>
+            <Text style={styles.title}>{t('auth.otp.title')}</Text>
+            <Text style={styles.subtitle}>
               {t('auth.otp.subtitle', { phoneNumber })}
             </Text>
           </View>
@@ -86,7 +86,7 @@ export default function OTPVerificationScreen() {
 
           {error && <Text style={styles.errorText}>{error}</Text>}
 
-          <Text style={[styles.helperText, isRTL && styles.textRTL]}>{t('auth.otp.testHint')}</Text>
+          <Text style={styles.helperText}>{t('auth.otp.testHint')}</Text>
 
           <View style={styles.spacer} />
 
@@ -104,10 +104,9 @@ const styles = StyleSheet.create({
   inner: { flex: 1, paddingHorizontal: 24 },
   backButton: { marginTop: 60, marginBottom: 20 },
   headerContainer: { marginBottom: 40 },
-  title: { fontSize: 32, fontWeight: '700', color: Colors.black, marginBottom: 12 },
-  subtitle: { fontSize: 16, color: Colors.gray[600], lineHeight: 24 },
-  textRTL: { textAlign: 'right', writingDirection: 'rtl' },
-  otpContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  title: { fontSize: 32, fontWeight: '700', color: Colors.black, marginBottom: 12, textAlign: 'left' },
+  subtitle: { fontSize: 16, color: Colors.gray[600], lineHeight: 24, textAlign: 'left' },
+  otpContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, direction: 'ltr' },
   otpInput: { flex: 1, height: 64, backgroundColor: Colors.gray[50], borderRadius: 12, borderWidth: 2, borderColor: Colors.gray[200], textAlign: 'center', fontSize: 24, fontWeight: '700', color: Colors.black },
   otpInputError: { borderColor: Colors.error, backgroundColor: '#FEF2F2' },
   otpInputFilled: { borderColor: Colors.primary, backgroundColor: Colors.white },

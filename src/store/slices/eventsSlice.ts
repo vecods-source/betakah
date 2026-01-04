@@ -29,6 +29,13 @@ interface EventsState {
   currentEvent: Event | null;
   invitations: Invitation[];
   isLoading: boolean;
+  isRefreshing: boolean;
+  isLoadingInvitations: boolean;
+  isLoadingAllEvents: boolean;
+  isLoadingUpcoming: boolean;
+  hasFetchedInvitations: boolean;
+  hasFetchedAllEvents: boolean;
+  hasFetchedUpcoming: boolean;
   error: string | null;
   pagination: {
     hasMore: boolean;
@@ -45,6 +52,13 @@ const initialState: EventsState = {
   currentEvent: null,
   invitations: [],
   isLoading: false,
+  isRefreshing: false,
+  isLoadingInvitations: false,
+  isLoadingAllEvents: false,
+  isLoadingUpcoming: false,
+  hasFetchedInvitations: false,
+  hasFetchedAllEvents: false,
+  hasFetchedUpcoming: false,
   error: null,
   pagination: {
     hasMore: false,
@@ -94,24 +108,26 @@ export const fetchEventDetails = createAsyncThunk(
 
 export const fetchUpcomingEvents = createAsyncThunk(
   'events/fetchUpcomingEvents',
-  async (_, { rejectWithValue }) => {
+  async (language: string = 'en', { rejectWithValue, getState }) => {
     try {
       const response = await eventsApi.getEvents({ status: 'PUBLISHED', upcoming: true });
       return response.data.data || [];
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch upcoming events');
+      // Return mock data based on language when API fails
+      return language === 'ar' ? mockUpcomingEventsAR : mockUpcomingEventsEN;
     }
   }
 );
 
 export const fetchAllEvents = createAsyncThunk(
   'events/fetchAllEvents',
-  async (_, { rejectWithValue }) => {
+  async (language: string = 'en', { rejectWithValue }) => {
     try {
       const response = await eventsApi.getEvents({});
       return response.data.data || [];
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch all events');
+      // Return mock data based on language when API fails
+      return language === 'ar' ? mockAllEventsAR : mockAllEventsEN;
     }
   }
 );
@@ -213,12 +229,14 @@ export const deleteEvent = createAsyncThunk(
 
 export const fetchMyInvitations = createAsyncThunk(
   'events/fetchMyInvitations',
-  async (params: { rsvpStatus?: string; upcoming?: boolean } = {}, { rejectWithValue }) => {
+  async (params: { rsvpStatus?: string; upcoming?: boolean; language?: string } = {}, { rejectWithValue }) => {
     try {
       const response = await eventsApi.getMyInvitations(params);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch invitations');
+      // Return mock data based on language when API fails
+      const mockData = params.language === 'ar' ? mockInvitationsAR : mockInvitationsEN;
+      return { data: mockData };
     }
   }
 );
@@ -270,6 +288,12 @@ const eventsSlice = createSlice({
       state.invitations = mockInvitations;
       state.events = mockAllEvents;
       state.isLoading = false;
+      state.isLoadingInvitations = false;
+      state.isLoadingAllEvents = false;
+      state.isLoadingUpcoming = false;
+      state.hasFetchedInvitations = true;
+      state.hasFetchedAllEvents = true;
+      state.hasFetchedUpcoming = true;
       state.error = null;
     },
     loadMockDataEN: (state) => {
@@ -281,6 +305,12 @@ const eventsSlice = createSlice({
       state.invitations = mockInvitationsEN;
       state.events = mockAllEventsEN;
       state.isLoading = false;
+      state.isLoadingInvitations = false;
+      state.isLoadingAllEvents = false;
+      state.isLoadingUpcoming = false;
+      state.hasFetchedInvitations = true;
+      state.hasFetchedAllEvents = true;
+      state.hasFetchedUpcoming = true;
       state.error = null;
     },
     loadMockDataAR: (state) => {
@@ -292,6 +322,12 @@ const eventsSlice = createSlice({
       state.invitations = mockInvitationsAR;
       state.events = mockAllEventsAR;
       state.isLoading = false;
+      state.isLoadingInvitations = false;
+      state.isLoadingAllEvents = false;
+      state.isLoadingUpcoming = false;
+      state.hasFetchedInvitations = true;
+      state.hasFetchedAllEvents = true;
+      state.hasFetchedUpcoming = true;
       state.error = null;
     },
   },
@@ -342,28 +378,37 @@ const eventsSlice = createSlice({
       })
       // Fetch upcoming events
       .addCase(fetchUpcomingEvents.pending, (state) => {
-        state.isLoading = true;
+        // Only show loading if we haven't fetched before (first load)
+        if (!state.hasFetchedUpcoming) {
+          state.isLoadingUpcoming = true;
+        }
         state.error = null;
       })
       .addCase(fetchUpcomingEvents.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.isLoadingUpcoming = false;
+        state.hasFetchedUpcoming = true;
         state.upcomingEvents = action.payload;
       })
       .addCase(fetchUpcomingEvents.rejected, (state, action) => {
-        state.isLoading = false;
+        state.isLoadingUpcoming = false;
+        state.hasFetchedUpcoming = true;
         state.error = action.payload as string;
       })
       // Fetch all events
       .addCase(fetchAllEvents.pending, (state) => {
-        state.isLoading = true;
+        if (!state.hasFetchedAllEvents) {
+          state.isLoadingAllEvents = true;
+        }
         state.error = null;
       })
       .addCase(fetchAllEvents.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.isLoadingAllEvents = false;
+        state.hasFetchedAllEvents = true;
         state.allEvents = action.payload;
       })
       .addCase(fetchAllEvents.rejected, (state, action) => {
-        state.isLoading = false;
+        state.isLoadingAllEvents = false;
+        state.hasFetchedAllEvents = true;
         state.error = action.payload as string;
       })
       // Fetch hosted events
@@ -435,15 +480,25 @@ const eventsSlice = createSlice({
       })
       // Fetch invitations
       .addCase(fetchMyInvitations.pending, (state) => {
-        state.isLoading = true;
+        if (!state.hasFetchedInvitations) {
+          state.isLoadingInvitations = true;
+        }
         state.error = null;
       })
       .addCase(fetchMyInvitations.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.invitations = action.payload.data;
+        state.isLoadingInvitations = false;
+        state.hasFetchedInvitations = true;
+        // Sort invitations by event date (soonest first)
+        const invitations = action.payload.data || [];
+        state.invitations = [...invitations].sort((a, b) => {
+          const dateA = a.event?.startDate ? new Date(a.event.startDate).getTime() : Infinity;
+          const dateB = b.event?.startDate ? new Date(b.event.startDate).getTime() : Infinity;
+          return dateA - dateB;
+        });
       })
       .addCase(fetchMyInvitations.rejected, (state, action) => {
-        state.isLoading = false;
+        state.isLoadingInvitations = false;
+        state.hasFetchedInvitations = true;
         state.error = action.payload as string;
       })
       // Update RSVP

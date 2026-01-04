@@ -13,14 +13,14 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
-import { useAppSelector, useAppDispatch } from '../../../src/hooks';
+import { useAppSelector, useAppDispatch, useTheme } from '../../../src/hooks';
 import { UIHeader } from '../../../src/components/ui';
 import { Colors } from '../../../src/constants/colors';
 
 export default function EditProfileScreen() {
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === 'ar';
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
+  const { isDark, colors, cardBackground, screenBackground, textPrimary, textSecondary, borderColor } = useTheme();
 
   const { user } = useAppSelector((state) => state.auth);
 
@@ -74,7 +74,7 @@ export default function EditProfileScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: screenBackground }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <UIHeader
@@ -99,7 +99,7 @@ export default function EditProfileScreen() {
                 <Text style={styles.photoInitials}>{getInitials()}</Text>
               </View>
             )}
-            <View style={styles.photoEditBadge}>
+            <View style={[styles.photoEditBadge, { borderColor: screenBackground }]}>
               <Feather name="camera" size={14} color="#fff" />
             </View>
           </TouchableOpacity>
@@ -110,56 +110,54 @@ export default function EditProfileScreen() {
         <View style={styles.form}>
           {/* First Name */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, isRTL && styles.textRTL]}>
+            <Text style={[styles.label, { color: isDark ? colors.gray[700] : colors.gray[700] }]}>
               {t('profile.edit.firstName')}
             </Text>
             <TextInput
-              style={[styles.input, isRTL && styles.inputRTL]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textPrimary, borderColor: borderColor }]}
               value={firstName}
               onChangeText={setFirstName}
               placeholder={t('auth.registration.firstNamePlaceholder')}
-              placeholderTextColor={Colors.gray[400]}
-              textAlign={isRTL ? 'right' : 'left'}
+              placeholderTextColor={isDark ? colors.gray[500] : colors.gray[400]}
             />
           </View>
 
           {/* Last Name */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, isRTL && styles.textRTL]}>
+            <Text style={[styles.label, { color: isDark ? colors.gray[700] : colors.gray[700] }]}>
               {t('profile.edit.lastName')}
             </Text>
             <TextInput
-              style={[styles.input, isRTL && styles.inputRTL]}
+              style={[styles.input, { backgroundColor: cardBackground, color: textPrimary, borderColor: borderColor }]}
               value={lastName}
               onChangeText={setLastName}
               placeholder={t('auth.registration.lastNamePlaceholder')}
-              placeholderTextColor={Colors.gray[400]}
-              textAlign={isRTL ? 'right' : 'left'}
+              placeholderTextColor={isDark ? colors.gray[500] : colors.gray[400]}
             />
           </View>
 
           {/* Phone (Read Only) */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, isRTL && styles.textRTL]}>
+            <Text style={[styles.label, { color: isDark ? colors.gray[700] : colors.gray[700] }]}>
               {t('profile.edit.phone')}
             </Text>
-            <View style={styles.readOnlyInput}>
-              <Text style={styles.readOnlyText}>{user?.phoneNumber || '+974 XXXX XXXX'}</Text>
+            <View style={[styles.readOnlyInput, { backgroundColor: isDark ? colors.gray[200] : colors.gray[100], borderColor: borderColor }]}>
+              <Text style={[styles.readOnlyText, { color: textSecondary }]}>{user?.phoneNumber || '+974 XXXX XXXX'}</Text>
             </View>
-            <Text style={styles.helperText}>{t('profile.edit.phoneNote')}</Text>
+            <Text style={[styles.helperText, { color: isDark ? colors.gray[500] : colors.gray[400] }]}>{t('profile.edit.phoneNote')}</Text>
           </View>
 
           {/* Gender (Read Only) */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, isRTL && styles.textRTL]}>
+            <Text style={[styles.label, { color: isDark ? colors.gray[700] : colors.gray[700] }]}>
               {t('profile.edit.gender')}
             </Text>
-            <View style={styles.readOnlyInput}>
-              <Text style={styles.readOnlyText}>
+            <View style={[styles.readOnlyInput, { backgroundColor: isDark ? colors.gray[200] : colors.gray[100], borderColor: borderColor }]}>
+              <Text style={[styles.readOnlyText, { color: textSecondary }]}>
                 {user?.gender === 'MALE' ? t('auth.registration.male') : t('auth.registration.female')}
               </Text>
             </View>
-            <Text style={styles.helperText}>{t('profile.edit.genderNote')}</Text>
+            <Text style={[styles.helperText, { color: isDark ? colors.gray[500] : colors.gray[400] }]}>{t('profile.edit.genderNote')}</Text>
           </View>
         </View>
       </View>
@@ -238,9 +236,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.gray[700],
-  },
-  textRTL: {
-    textAlign: 'right',
+    textAlign: 'left',
   },
   input: {
     backgroundColor: '#fff',
@@ -251,9 +247,7 @@ const styles = StyleSheet.create({
     color: Colors.black,
     borderWidth: 1,
     borderColor: Colors.gray[200],
-  },
-  inputRTL: {
-    textAlign: 'right',
+    textAlign: 'left',
   },
   readOnlyInput: {
     backgroundColor: Colors.gray[100],
@@ -266,10 +260,12 @@ const styles = StyleSheet.create({
   readOnlyText: {
     fontSize: 16,
     color: Colors.gray[500],
+    textAlign: 'left',
   },
   helperText: {
     fontSize: 12,
     color: Colors.gray[400],
     marginTop: 4,
+    textAlign: 'left',
   },
 });

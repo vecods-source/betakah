@@ -45,8 +45,8 @@ export default function PhoneInputScreen() {
           <UIBackButton style={styles.backButton} />
 
           <View style={styles.headerContainer}>
-            <Text style={[styles.title, isRTL && styles.textRTL]}>{t('auth.phone.title')}</Text>
-            <Text style={[styles.subtitle, isRTL && styles.textRTL]}>{t('auth.phone.subtitle')}</Text>
+            <Text style={styles.title}>{t('auth.phone.title')}</Text>
+            <Text style={styles.subtitle}>{t('auth.phone.subtitle')}</Text>
           </View>
 
           <View style={styles.inputSection}>
@@ -65,7 +65,7 @@ export default function PhoneInputScreen() {
               />
             </View>
             {error && <Text style={styles.errorText}>{error}</Text>}
-            <Text style={[styles.helperText, isRTL && styles.textRTL]}>{t('auth.phone.helperText')}</Text>
+            <Text style={styles.helperText}>{t('auth.phone.helperText')}</Text>
           </View>
 
           <View style={styles.spacer} />
@@ -78,7 +78,7 @@ export default function PhoneInputScreen() {
             >
               <Text style={styles.continueButtonText}>{t('auth.phone.continue')}</Text>
             </TouchableOpacity>
-            <Text style={[styles.termsText, isRTL && styles.textRTL]}>{t('auth.phone.terms')}</Text>
+            <Text style={styles.termsText}>{t('auth.phone.terms')}</Text>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -91,9 +91,8 @@ const styles = StyleSheet.create({
   inner: { flex: 1, paddingHorizontal: 24 },
   backButton: { marginTop: 60, marginBottom: 20 },
   headerContainer: { marginBottom: 40 },
-  title: { fontSize: 32, fontWeight: '700', color: Colors.black, marginBottom: 12 },
-  subtitle: { fontSize: 16, color: Colors.gray[600], lineHeight: 24 },
-  textRTL: { textAlign: 'right', writingDirection: 'rtl' },
+  title: { fontSize: 32, fontWeight: '700', color: Colors.black, marginBottom: 12, textAlign: 'left' },
+  subtitle: { fontSize: 16, color: Colors.gray[600], lineHeight: 24, textAlign: 'left' },
   inputSection: { gap: 12 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.gray[50], borderRadius: 16, borderWidth: 2, borderColor: Colors.gray[200], paddingHorizontal: 16, height: 64 },
   inputContainerError: { borderColor: Colors.error, backgroundColor: '#FEF2F2' },
@@ -102,7 +101,7 @@ const styles = StyleSheet.create({
   divider: { width: 1, height: 32, backgroundColor: Colors.gray[300], marginHorizontal: 16 },
   input: { flex: 1, fontSize: 20, fontWeight: '500', color: Colors.black, letterSpacing: 1 },
   errorText: { fontSize: 14, color: Colors.error, marginTop: 4 },
-  helperText: { fontSize: 14, color: Colors.gray[500] },
+  helperText: { fontSize: 14, color: Colors.gray[500], textAlign: 'left' },
   spacer: { flex: 1 },
   bottomSection: { paddingBottom: 40, gap: 16 },
   continueButton: { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, borderRadius: 16, paddingVertical: 18 },

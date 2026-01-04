@@ -46,7 +46,7 @@ const Paginator = ({ data, scrollX }: { data: any[]; scrollX: Animated.SharedVal
 );
 
 const paginatorStyles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 32 },
+  container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 32, direction: 'ltr' },
   dot: { height: 8, borderRadius: 4, backgroundColor: Colors.primary },
 });
 
@@ -182,8 +182,8 @@ export default function OnboardingScreen() {
     <View style={styles.slide}>
       <View style={styles.illustrationContainer}>{item.illustration}</View>
       <View style={styles.textContainer}>
-        <Text style={[styles.title, isRTL && styles.textRTL]}>{t(`auth.onboarding.${item.id}.title`)}</Text>
-        <Text style={[styles.description, isRTL && styles.textRTL]}>{t(`auth.onboarding.${item.id}.description`)}</Text>
+        <Text style={styles.title}>{t(`auth.onboarding.${item.id}.title`)}</Text>
+        <Text style={styles.description}>{t(`auth.onboarding.${item.id}.description`)}</Text>
       </View>
     </View>
   );
@@ -251,14 +251,13 @@ const illustrationStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white },
-  skipButton: { position: 'absolute', top: 60, right: 24, zIndex: 10, paddingVertical: 8, paddingHorizontal: 16 },
+  skipButton: { position: 'absolute', top: 60, end: 24, zIndex: 10, paddingVertical: 8, paddingHorizontal: 16 },
   skipText: { fontSize: 16, color: Colors.gray[500], fontWeight: '500' },
   slide: { width, flex: 1, alignItems: 'center', paddingTop: 120 },
   illustrationContainer: { width: 240, height: 240, backgroundColor: Colors.gray[50], borderRadius: 120, justifyContent: 'center', alignItems: 'center', marginBottom: 60 },
   textContainer: { paddingHorizontal: 40, alignItems: 'center' },
   title: { fontSize: 28, fontWeight: '700', color: Colors.black, textAlign: 'center', marginBottom: 16 },
   description: { fontSize: 16, color: Colors.gray[600], textAlign: 'center', lineHeight: 24 },
-  textRTL: { writingDirection: 'rtl' },
   bottomContainer: { paddingHorizontal: 24, paddingBottom: 50 },
   nextButton: { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary, borderRadius: 16, paddingVertical: 18 },
   nextButtonText: { fontSize: 18, fontWeight: '600', color: Colors.white },

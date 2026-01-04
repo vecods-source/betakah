@@ -5,6 +5,8 @@ export default function TabLayout() {
   return (
     <NativeTabs
       tintColor={Colors.primary}
+      barTintColor="#FFFFFF"
+      translucent={false}
     >
       <NativeTabs.Trigger name="index">
         <Icon sf="house.fill" drawable="ic_home" />

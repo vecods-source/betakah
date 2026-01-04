@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Image, ImageSourcePropType } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { fetchUpcomingEvents } from '../../store/slices/eventsSlice';
 import { HomeStackScreenProps } from '../../navigation/types';
@@ -26,54 +26,74 @@ export default function HomeScreen({ navigation }: HomeStackScreenProps<'HomeScr
     loadEvents();
   }, [loadEvents]);
 
-  const renderEventCard = (item: Event) => (
-    <TouchableOpacity
-      key={item.id}
-      style={styles.eventCard}
-      onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}
-    >
-      <View style={styles.cardContent}>
-        <UIStack direction="vertical" spacing={12}>
-          <UIStack direction="horizontal" alignItems="center">
-            <UIBadge variant="info">{item.type.replace('_', ' ')}</UIBadge>
-            <UISpacer />
-            <UIText size={14} color="#718096">
-              {new Date(item.startDate).toLocaleDateString('en-QA', {
-                month: 'short',
-                day: 'numeric',
-              })}
-            </UIText>
-          </UIStack>
+  const getImageSource = (event: Event): ImageSourcePropType | undefined => {
+    if (event.coverImage) {
+      // Local asset (number) or URL string
+      return typeof event.coverImage === 'number'
+        ? event.coverImage
+        : { uri: event.coverImage };
+    }
+    if (event.coverImageUrl) {
+      return { uri: event.coverImageUrl };
+    }
+    return undefined;
+  };
 
-          <UIText size={20} weight="semibold" color="#1a202c">
-            {item.title}
-          </UIText>
+  const renderEventCard = (item: Event) => {
+    const imageSource = getImageSource(item);
 
-          {item.titleAr && (
-            <UIText size={18} color="#4a5568">
-              {item.titleAr}
-            </UIText>
-          )}
-
-          <UIStack direction="horizontal" spacing={16}>
-            <UIStack direction="horizontal" spacing={4} alignItems="center">
-              <UIIcon name="mappin" color="#718096" size={14} />
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.eventCard}
+        onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}
+      >
+        {imageSource && (
+          <Image source={imageSource} style={styles.cardImage} resizeMode="cover" />
+        )}
+        <View style={styles.cardContent}>
+          <UIStack direction="vertical" spacing={12}>
+            <UIStack direction="horizontal" alignItems="center">
+              <UIBadge variant="info">{item.type.replace('_', ' ')}</UIBadge>
+              <UISpacer />
               <UIText size={14} color="#718096">
-                {item.location || 'Location TBD'}
+                {new Date(item.startDate).toLocaleDateString('en-QA', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </UIText>
             </UIStack>
-            <UISpacer />
-            <UIStack direction="horizontal" spacing={4} alignItems="center">
-              <UIIcon name="person.2.fill" color="#718096" size={14} />
-              <UIText size={14} color="#718096">
-                {item.guestCount || 0} guests
+
+            <UIText size={20} weight="semibold" color="#1a202c">
+              {item.title}
+            </UIText>
+
+            {item.titleAr && (
+              <UIText size={18} color="#4a5568">
+                {item.titleAr}
               </UIText>
+            )}
+
+            <UIStack direction="horizontal" spacing={16}>
+              <UIStack direction="horizontal" spacing={4} alignItems="center">
+                <UIIcon name="mappin" color="#718096" size={14} />
+                <UIText size={14} color="#718096">
+                  {item.location || 'Location TBD'}
+                </UIText>
+              </UIStack>
+              <UISpacer />
+              <UIStack direction="horizontal" spacing={4} alignItems="center">
+                <UIIcon name="person.2.fill" color="#718096" size={14} />
+                <UIText size={14} color="#718096">
+                  {item.guestCount || 0} guests
+                </UIText>
+              </UIStack>
             </UIStack>
           </UIStack>
-        </UIStack>
-      </View>
-    </TouchableOpacity>
-  );
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -153,6 +173,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    overflow: 'hidden',
+  },
+  cardImage: {
+    width: '100%',
+    height: 160,
   },
   cardContent: {
     padding: 20,

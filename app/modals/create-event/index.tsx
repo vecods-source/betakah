@@ -686,10 +686,10 @@ export default function CreateEventScreen() {
   // Step 1: Event Type
   const renderStep1 = () => (
     <View style={styles.stepContent}>
-      <Text style={[styles.stepTitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepTitle]}>
         {t('create.step1.title')}
       </Text>
-      <Text style={[styles.stepSubtitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepSubtitle]}>
         {t('create.step1.subtitle')}
       </Text>
 
@@ -745,33 +745,34 @@ export default function CreateEventScreen() {
   // Step 2: Event Details
   const renderStep2 = () => (
     <View style={styles.stepContent}>
-      <Text style={[styles.stepTitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepTitle]}>
         {t('create.step2.title')}
       </Text>
-      <Text style={[styles.stepSubtitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepSubtitle]}>
         {t('create.step2.subtitle')}
       </Text>
 
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, isArabic && styles.textRTL]}>
+        <Text style={[styles.inputLabel]}>
           {t('events.form.title')} *
         </Text>
         <TextInput
-          style={[styles.input, isArabic && styles.inputRTL]}
+          style={[styles.input]}
           placeholder={t('create.step2.titlePlaceholder')}
           placeholderTextColor={Colors.gray[400]}
           value={isArabic ? titleAr : title}
           onChangeText={isArabic ? setTitleAr : setTitle}
           maxLength={100}
+          textAlign={isArabic ? 'right' : 'left'}
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, isArabic && styles.textRTL]}>
+        <Text style={[styles.inputLabel]}>
           {t('events.form.description')}
         </Text>
         <TextInput
-          style={[styles.input, styles.descriptionInput, isArabic && styles.inputRTL]}
+          style={[styles.input, styles.descriptionInput]}
           placeholder={t('create.step2.descriptionPlaceholder')}
           placeholderTextColor={Colors.gray[400]}
           value={isArabic ? descriptionAr : description}
@@ -780,6 +781,7 @@ export default function CreateEventScreen() {
           maxLength={500}
           editable={true}
           selectTextOnFocus={false}
+          textAlign={isArabic ? 'right' : 'left'}
         />
       </View>
 
@@ -802,7 +804,7 @@ export default function CreateEventScreen() {
 
       {/* Quick Insert Chips */}
       <View style={styles.quickInsertContainer}>
-        <Text style={[styles.quickInsertLabel, isArabic && styles.textRTL]}>
+        <Text style={[styles.quickInsertLabel]}>
           {isArabic ? 'إضافة سريعة' : 'Quick add'}
         </Text>
         <View style={styles.quickInsertChips}>
@@ -862,15 +864,15 @@ export default function CreateEventScreen() {
   // Step 3: Date & Location
   const renderStep3 = () => (
     <View style={styles.stepContent}>
-      <Text style={[styles.stepTitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepTitle]}>
         {t('create.step3.title')}
       </Text>
-      <Text style={[styles.stepSubtitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepSubtitle]}>
         {t('create.step3.subtitle')}
       </Text>
 
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, isArabic && styles.textRTL]}>
+        <Text style={[styles.inputLabel]}>
           {t('events.form.startDate')} *
         </Text>
         <View style={styles.dateTimeRow}>
@@ -903,7 +905,7 @@ export default function CreateEventScreen() {
 
       {hasEndDate && (
         <View style={styles.inputGroup}>
-          <Text style={[styles.inputLabel, isArabic && styles.textRTL]}>
+          <Text style={[styles.inputLabel]}>
             {t('events.form.endDate')}
           </Text>
           <View style={styles.dateTimeRow}>
@@ -931,7 +933,7 @@ export default function CreateEventScreen() {
 
       <View style={[styles.inputGroup, { marginTop: 24 }]}>
         <View style={styles.locationHeader}>
-          <Text style={[styles.inputLabel, isArabic && styles.textRTL]}>
+          <Text style={[styles.inputLabel]}>
             {t('events.form.location')}
           </Text>
           <TouchableOpacity
@@ -984,7 +986,7 @@ export default function CreateEventScreen() {
         <View style={styles.locationInput}>
           <Feather name="map-pin" size={18} color={Colors.gray[400]} style={styles.locationIcon} />
           <TextInput
-            style={[styles.input, styles.inputWithIcon, isArabic && styles.inputRTL]}
+            style={[styles.input, styles.inputWithIcon]}
             placeholder={t('create.step3.locationPlaceholder')}
             placeholderTextColor={Colors.gray[400]}
             value={location}
@@ -998,14 +1000,14 @@ export default function CreateEventScreen() {
   // Step 4: Theme Selection
   const renderStep4 = () => (
     <View style={styles.stepContent}>
-      <Text style={[styles.stepTitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepTitle]}>
         {t('create.step4.title')}
       </Text>
-      <Text style={[styles.stepSubtitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepSubtitle]}>
         {t('create.step4.subtitle')}
       </Text>
 
-      <Text style={[styles.inputLabel, isArabic && styles.textRTL, { marginTop: 8 }]}>
+      <Text style={[styles.inputLabel, { marginTop: 8 }]}>
         {t('create.step4.selectTemplate')}
       </Text>
 
@@ -1092,7 +1094,7 @@ export default function CreateEventScreen() {
 
       {selectedTemplate && (
         <>
-          <Text style={[styles.inputLabel, isArabic && styles.textRTL, { marginTop: 24 }]}>
+          <Text style={[styles.inputLabel, { marginTop: 24 }]}>
             {t('create.step4.customizeColor')}
           </Text>
           <ScrollView
@@ -1139,7 +1141,7 @@ export default function CreateEventScreen() {
             <Text style={styles.previewInvitationText}>
               {isArabic ? 'معاينة الدعوة' : 'Preview Invitation'}
             </Text>
-            <Feather name="chevron-right" size={18} color={Colors.primary} />
+            <Feather name={isArabic ? 'chevron-left' : 'chevron-right'} size={18} color={Colors.primary} />
           </TouchableOpacity>
         </>
       )}
@@ -1149,15 +1151,15 @@ export default function CreateEventScreen() {
   // Step 5: Settings & Review
   const renderStep5 = () => (
     <View style={styles.stepContent}>
-      <Text style={[styles.stepTitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepTitle]}>
         {t('create.step5.title')}
       </Text>
-      <Text style={[styles.stepSubtitle, isArabic && styles.textRTL]}>
+      <Text style={[styles.stepSubtitle]}>
         {t('create.step5.subtitle')}
       </Text>
 
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, isArabic && styles.textRTL]}>
+        <Text style={[styles.inputLabel]}>
           {t('events.form.genderRestriction')}
         </Text>
         <View style={styles.genderOptions}>
@@ -1185,7 +1187,7 @@ export default function CreateEventScreen() {
 
       {/* Guest List Section */}
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, isArabic && styles.textRTL]}>
+        <Text style={[styles.inputLabel]}>
           {isArabic ? 'قائمة الضيوف' : 'Guest List'}
         </Text>
 
@@ -1370,7 +1372,7 @@ export default function CreateEventScreen() {
 
       {/* Co-Host Section */}
       <View style={styles.inputGroup}>
-        <Text style={[styles.inputLabel, isArabic && styles.textRTL]}>
+        <Text style={[styles.inputLabel]}>
           {isArabic ? 'المضيفون المشاركون' : 'Co-Hosts'}
         </Text>
         <Text style={styles.coHostHint}>
@@ -1433,7 +1435,7 @@ export default function CreateEventScreen() {
 
       {/* Review Summary */}
       <View style={styles.reviewSection}>
-        <Text style={[styles.reviewTitle, isArabic && styles.textRTL]}>
+        <Text style={[styles.reviewTitle]}>
           {t('create.step5.review')}
         </Text>
 
@@ -1637,7 +1639,7 @@ export default function CreateEventScreen() {
             <View style={styles.mapSearchBar}>
               <Feather name="search" size={18} color={Colors.gray[400]} />
               <TextInput
-                style={[styles.mapSearchInput, isArabic && styles.inputRTL]}
+                style={[styles.mapSearchInput]}
                 placeholder={isArabic ? 'ابحث عن موقع...' : 'Search for a location...'}
                 placeholderTextColor={Colors.gray[400]}
                 value={mapSearchQuery}
@@ -1756,7 +1758,7 @@ export default function CreateEventScreen() {
                       {isArabic ? 'اسم الضيف' : 'Guest Name'}
                     </Text>
                     <TextInput
-                      style={[styles.manualGuestInput, isArabic && styles.inputRTL]}
+                      style={[styles.manualGuestInput]}
                       placeholder={isArabic ? 'أدخل الاسم' : 'Enter name'}
                       placeholderTextColor={Colors.gray[400]}
                       value={manualGuestName}
@@ -1810,7 +1812,7 @@ export default function CreateEventScreen() {
                   <View style={styles.contactsSearchBar}>
                     <Feather name="search" size={18} color={Colors.gray[400]} />
                     <TextInput
-                      style={[styles.contactsSearchInput, isArabic && styles.inputRTL]}
+                      style={[styles.contactsSearchInput]}
                       placeholder={isArabic ? 'ابحث عن جهة اتصال...' : 'Search contacts...'}
                       placeholderTextColor={Colors.gray[400]}
                       value={contactsSearch}
@@ -1941,7 +1943,7 @@ export default function CreateEventScreen() {
                       {isArabic ? 'اسم المضيف المشارك' : 'Co-Host Name'}
                     </Text>
                     <TextInput
-                      style={[styles.manualGuestInput, isArabic && styles.inputRTL]}
+                      style={[styles.manualGuestInput]}
                       placeholder={isArabic ? 'أدخل الاسم' : 'Enter name'}
                       placeholderTextColor={Colors.gray[400]}
                       value={manualCoHostName}
@@ -1997,7 +1999,7 @@ export default function CreateEventScreen() {
                   <View style={styles.contactsSearchBar}>
                     <Feather name="search" size={18} color={Colors.gray[400]} />
                     <TextInput
-                      style={[styles.contactsSearchInput, isArabic && styles.inputRTL]}
+                      style={[styles.contactsSearchInput]}
                       placeholder={isArabic ? 'ابحث عن جهة اتصال...' : 'Search contacts...'}
                       placeholderTextColor={Colors.gray[400]}
                       value={contactsSearch}
@@ -2213,15 +2215,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.black,
     marginBottom: 4,
+    textAlign: 'left',
   },
   stepSubtitle: {
     fontSize: 14,
     color: Colors.gray[500],
     marginBottom: 16,
-  },
-  textRTL: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
+    textAlign: 'left',
   },
   typesGrid: {
     flexDirection: 'row',
@@ -2293,6 +2293,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.gray[500],
     marginBottom: 4,
+    textAlign: 'left',
   },
   input: {
     borderBottomWidth: 1,
@@ -2301,9 +2302,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     fontSize: 17,
     color: Colors.black,
-  },
-  inputRTL: {
-    textAlign: 'right',
+    textAlign: 'left',
   },
   textArea: {
     textAlignVertical: 'top',
@@ -2338,6 +2337,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.gray[500],
     marginBottom: 12,
+    textAlign: 'left',
   },
   quickInsertChips: {
     flexDirection: 'row',
@@ -2483,6 +2483,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.black,
     padding: 0,
+    textAlign: 'left',
   },
   mapSearchResults: {
     marginTop: 8,
@@ -2514,12 +2515,13 @@ const styles = StyleSheet.create({
   },
   mapSearchResultInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginStart: 12,
   },
   mapSearchResultName: {
     fontSize: 14,
     fontWeight: '500',
     color: Colors.black,
+    textAlign: 'left',
   },
   mapSearchResultAddress: {
     fontSize: 12,
@@ -2601,6 +2603,7 @@ const styles = StyleSheet.create({
   dateButtonText: {
     fontSize: 17,
     color: Colors.black,
+    textAlign: 'left',
   },
   toggleRow: {
     flexDirection: 'row',
@@ -2624,6 +2627,7 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: 14,
     color: Colors.gray[600],
+    textAlign: 'left',
   },
   templatesScroll: {
     marginTop: 12,
@@ -2793,8 +2797,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: Colors.black,
-    marginLeft: 10,
+    marginStart: 10,
     flex: 1,
+    textAlign: 'left',
   },
   guestSectionCount: {
     fontSize: 14,
@@ -2826,6 +2831,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: Colors.primary,
+    textAlign: 'left',
   },
   guestPreviewList: {
     marginTop: 16,
@@ -2853,12 +2859,13 @@ const styles = StyleSheet.create({
   },
   guestPreviewInfo: {
     flex: 1,
-    marginLeft: 10,
+    marginStart: 10,
   },
   guestPreviewName: {
     fontSize: 14,
     fontWeight: '500',
     color: Colors.black,
+    textAlign: 'left',
   },
   guestPreviewPhone: {
     fontSize: 12,
@@ -2924,6 +2931,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.gray[600],
     marginBottom: 8,
+    textAlign: 'left',
   },
   manualGuestInput: {
     borderWidth: 1,
@@ -2934,6 +2942,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.black,
     backgroundColor: Colors.gray[50],
+    textAlign: 'left',
   },
   confirmButtonDisabled: {
     backgroundColor: Colors.gray[300],
@@ -2957,6 +2966,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.black,
     padding: 0,
+    textAlign: 'left',
   },
   selectedCountBar: {
     backgroundColor: Colors.primary + '15',
@@ -3018,12 +3028,13 @@ const styles = StyleSheet.create({
   },
   contactInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginStart: 12,
   },
   contactName: {
     fontSize: 15,
     fontWeight: '500',
     color: Colors.black,
+    textAlign: 'left',
   },
   contactPhone: {
     fontSize: 13,
@@ -3072,6 +3083,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.black,
     marginBottom: 16,
+    textAlign: 'left',
   },
   reviewItem: {
     flexDirection: 'row',

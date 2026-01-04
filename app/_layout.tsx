@@ -16,7 +16,8 @@ import { initializeLanguage } from '../src/store/slices/languageSlice';
 import { loadStoredAuth, loadMockAuth, loadMockAuthEN, loadMockAuthAR } from '../src/store/slices/authSlice';
 import { loadMockData, loadMockDataEN, loadMockDataAR } from '../src/store/slices/eventsSlice';
 import { loadMockNotifications, loadMockNotificationsEN, loadMockNotificationsAR } from '../src/store/slices/notificationsSlice';
-import { useAppSelector } from '../src/hooks';
+import { useAppSelector, useTheme } from '../src/hooks';
+import { ThemeProvider } from '../src/context';
 
 function useProtectedRoute(isAuthenticated: boolean) {
   const segments = useSegments();
@@ -37,6 +38,7 @@ function useProtectedRoute(isAuthenticated: boolean) {
 
 function RootLayoutNav() {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -73,7 +75,7 @@ function RootLayoutNav() {
         <Stack.Screen name="modals/rsvp" options={{ presentation: 'modal' }} />
         <Stack.Screen name="modals/media-viewer" options={{ presentation: 'fullScreenModal' }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
     </>
   );
 }
@@ -134,9 +136,11 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <SafeAreaProvider>
-        <RootLayoutNav />
-      </SafeAreaProvider>
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <RootLayoutNav />
+        </SafeAreaProvider>
+      </ThemeProvider>
     </Provider>
   );
 }

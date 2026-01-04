@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useAppSelector, useAppDispatch } from '../../../src/hooks';
+import { useAppSelector, useAppDispatch, useTheme } from '../../../src/hooks';
 import { logout } from '../../../src/store/slices/authSlice';
 import { Colors } from '../../../src/constants/colors';
 
@@ -20,7 +20,8 @@ export default function ProfileScreen() {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === 'ar';
+  const isArabic = i18n.language === 'ar' || i18n.language?.startsWith('ar');
+  const { isDark, colors, cardBackground, screenBackground, textPrimary, textSecondary, borderColor } = useTheme();
 
   const { user } = useAppSelector((state) => state.auth);
 
@@ -53,10 +54,16 @@ export default function ProfileScreen() {
       onPress: () => router.push('/(tabs)/profile/edit-profile'),
     },
     {
+      id: 'memories',
+      label: isArabic ? 'ذكرياتي' : 'My Memories',
+      icon: 'image',
+      onPress: () => router.push('/(tabs)/profile/memories'),
+    },
+    {
       id: 'important-dates',
       label: t('profile.importantDates'),
       icon: 'heart',
-      onPress: () => {},
+      onPress: () => router.push('/(tabs)/profile/important-dates'),
     },
     {
       id: 'settings',
@@ -68,15 +75,15 @@ export default function ProfileScreen() {
       id: 'blocked',
       label: t('profile.blockedUsers'),
       icon: 'slash',
-      onPress: () => {},
+      onPress: () => router.push('/(tabs)/profile/blocked-users'),
     },
   ];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: screenBackground }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+        <Text style={[styles.headerTitle, { color: textPrimary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('profile.title')}</Text>
       </View>
 
       {/* Profile Card */}
@@ -88,32 +95,29 @@ export default function ProfileScreen() {
             <Text style={styles.avatarText}>{getInitials()}</Text>
           </View>
         )}
-        <Text style={styles.userName}>
+        <Text style={[styles.userName, { color: textPrimary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
           {user?.firstName} {user?.lastName}
         </Text>
-        <Text style={styles.userPhone}>{user?.phoneNumber || '+974 XXXX XXXX'}</Text>
+        <Text style={[styles.userPhone, { color: textSecondary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{user?.phoneNumber || '+974 XXXX XXXX'}</Text>
       </View>
 
       {/* Menu Items */}
-      <View style={styles.menuContainer}>
+      <View style={[styles.menuContainer, { backgroundColor: cardBackground }]}>
         {menuItems.map((item, index) => (
           <TouchableOpacity
             key={item.id}
-            style={[
-              styles.menuItem,
-              index < menuItems.length - 1 && styles.menuItemBorder,
-            ]}
+            style={styles.menuItem}
             onPress={item.onPress}
             activeOpacity={0.7}
           >
-            <Feather name={item.icon as any} size={20} color={Colors.gray[600]} />
-            <Text style={[styles.menuLabel, isRTL && styles.textRTL]}>
+            <Feather name={item.icon as any} size={20} color={isDark ? colors.gray[600] : colors.gray[600]} />
+            <Text style={[styles.menuLabel, { color: textPrimary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
               {item.label}
             </Text>
             <Feather
-              name={isRTL ? 'chevron-left' : 'chevron-right'}
+              name={isArabic ? 'chevron-left' : 'chevron-right'}
               size={20}
-              color={Colors.gray[400]}
+              color={isDark ? colors.gray[500] : colors.gray[400]}
             />
           </TouchableOpacity>
         ))}
@@ -121,16 +125,16 @@ export default function ProfileScreen() {
 
       {/* Logout */}
       <TouchableOpacity
-        style={styles.logoutButton}
+        style={[styles.logoutButton, { backgroundColor: cardBackground }]}
         onPress={handleLogout}
         activeOpacity={0.7}
       >
         <Feather name="log-out" size={20} color="#E53935" />
-        <Text style={styles.logoutText}>{t('profile.logout')}</Text>
+        <Text style={[styles.logoutText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('profile.logout')}</Text>
       </TouchableOpacity>
 
       {/* Version */}
-      <Text style={styles.versionText}>{t('settings.version')} 1.0.0</Text>
+      <Text style={[styles.versionText, { color: isDark ? colors.gray[500] : colors.gray[400], writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('settings.version')} 1.0.0</Text>
     </View>
   );
 }
@@ -195,18 +199,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 14,
   },
-  menuItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
-  },
   menuLabel: {
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
     color: Colors.black,
-  },
-  textRTL: {
-    textAlign: 'right',
   },
   logoutButton: {
     flexDirection: 'row',

@@ -61,6 +61,7 @@ export interface Event {
   description?: string;
   descriptionAr?: string;
   coverImageUrl?: string;
+  coverImage?: number | string; // Local asset (number) or URL (string)
   status: EventStatus;
   startDate: string;
   endDate?: string;
@@ -198,6 +199,7 @@ export interface ImportantDate {
   date: string;
   notes?: string;
   reminderEnabled: boolean;
+  coverImage?: number | string; // Local asset (number) or URL (string)
   createdAt: string;
 }
 

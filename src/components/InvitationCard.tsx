@@ -187,7 +187,7 @@ export function InvitationCard({
         {/* Invitation Text */}
         <Text style={[
           styles.invitationText,
-          { color: colors.accent, fontFamily: titleFont },
+          { color: colors.accent, fontFamily: titleFont, writingDirection: isArabic ? 'rtl' : 'ltr' },
           cardStyle === 'modern' && styles.modernInvitationText,
           cardStyle === 'somber' && styles.somberInvitationText,
         ]}>
@@ -199,8 +199,7 @@ export function InvitationCard({
         {/* Event Title */}
         <Text style={[
           styles.eventTitle,
-          { color: colors.text, fontFamily: titleFont },
-          isArabic && styles.textRTL,
+          { color: colors.text, fontFamily: titleFont, writingDirection: isArabic ? 'rtl' : 'ltr' },
           cardStyle === 'somber' && styles.somberEventTitle,
         ]}>
           {title || (isArabic ? 'عنوان المناسبة' : 'Event Title')}
@@ -219,8 +218,7 @@ export function InvitationCard({
           ]}>
             <Text style={[
               styles.messageText,
-              { color: colors.text, fontFamily: bodyFont },
-              isArabic && styles.textRTL,
+              { color: colors.text, fontFamily: bodyFont, writingDirection: isArabic ? 'rtl' : 'ltr' },
               cardStyle === 'somber' && styles.somberMessageText,
             ]}>
               {cardStyle === 'somber' ? (customMessage || description) : `"${customMessage || description}"`}
@@ -231,10 +229,10 @@ export function InvitationCard({
         {/* Host Info */}
         {hostName && (
           <View style={styles.hostSection}>
-            <Text style={[styles.hostedBy, { color: colors.accent, fontFamily: bodyFont }]}>
+            <Text style={[styles.hostedBy, { color: colors.accent, fontFamily: bodyFont, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
               {isArabic ? 'مقدم من' : 'Hosted by'}
             </Text>
-            <Text style={[styles.hostName, { color: colors.text, fontFamily: titleFont }]}>
+            <Text style={[styles.hostName, { color: colors.text, fontFamily: titleFont, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
               {hostName}
             </Text>
           </View>
@@ -252,10 +250,10 @@ export function InvitationCard({
               <Feather name="calendar" size={16} color={colors.primary} />
             </View>
             <View style={styles.detailContent}>
-              <Text style={[styles.detailLabel, { color: colors.accent }]}>
+              <Text style={[styles.detailLabel, { color: colors.accent, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                 {isArabic ? 'التاريخ' : 'Date'}
               </Text>
-              <Text style={[styles.detailValue, { color: colors.text }]}>
+              <Text style={[styles.detailValue, { color: colors.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                 {formatDate(event.startDate) || (isArabic ? 'سيتم التحديد' : 'To be announced')}
               </Text>
             </View>
@@ -271,10 +269,10 @@ export function InvitationCard({
               <Feather name="clock" size={16} color={colors.primary} />
             </View>
             <View style={styles.detailContent}>
-              <Text style={[styles.detailLabel, { color: colors.accent }]}>
+              <Text style={[styles.detailLabel, { color: colors.accent, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                 {isArabic ? 'الوقت' : 'Time'}
               </Text>
-              <Text style={[styles.detailValue, { color: colors.text }]}>
+              <Text style={[styles.detailValue, { color: colors.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                 {formatTime(event.startDate) || (isArabic ? 'سيتم التحديد' : 'To be announced')}
               </Text>
             </View>
@@ -291,10 +289,10 @@ export function InvitationCard({
                 <Feather name="map-pin" size={16} color={colors.primary} />
               </View>
               <View style={styles.detailContent}>
-                <Text style={[styles.detailLabel, { color: colors.accent }]}>
+                <Text style={[styles.detailLabel, { color: colors.accent, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                   {isArabic ? 'الموقع' : 'Location'}
                 </Text>
-                <Text style={[styles.detailValue, { color: colors.text }]} numberOfLines={2}>
+                <Text style={[styles.detailValue, { color: colors.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]} numberOfLines={2}>
                   {event.location}
                 </Text>
               </View>
@@ -305,7 +303,7 @@ export function InvitationCard({
         {/* RSVP Section (only for guest view, not preview) */}
         {!isPreview && onRSVP && (
           <View style={styles.rsvpSection}>
-            <Text style={[styles.rsvpTitle, { color: colors.text }]}>
+            <Text style={[styles.rsvpTitle, { color: colors.text, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
               {isArabic ? 'هل ستحضر؟' : 'Will you attend?'}
             </Text>
             <View style={styles.rsvpButtons}>
@@ -320,7 +318,7 @@ export function InvitationCard({
                 onPress={() => onRSVP('accept')}
               >
                 <Feather name="check" size={18} color="#fff" />
-                <Text style={styles.rsvpButtonText}>
+                <Text style={[styles.rsvpButtonText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                   {isCondolence
                     ? (isArabic ? 'سأحضر' : "I'll Attend")
                     : (isArabic ? 'بكل سرور' : 'Accept')}
@@ -336,7 +334,7 @@ export function InvitationCard({
                 onPress={() => onRSVP('decline')}
               >
                 <Feather name="x" size={18} color={Colors.gray[600]} />
-                <Text style={[styles.rsvpButtonText, { color: Colors.gray[600] }]}>
+                <Text style={[styles.rsvpButtonText, { color: Colors.gray[600], writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                   {isArabic ? 'أعتذر' : 'Decline'}
                 </Text>
               </TouchableOpacity>
@@ -353,7 +351,7 @@ export function InvitationCard({
           cardStyle === 'classic' && styles.classicPreviewBadge,
           cardStyle === 'somber' && styles.somberPreviewBadge,
         ]}>
-          <Text style={styles.previewBadgeText}>
+          <Text style={[styles.previewBadgeText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
             {isArabic ? 'معاينة' : 'Preview'}
           </Text>
         </View>
@@ -487,9 +485,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginHorizontal: 24,
     lineHeight: 34,
-  },
-  textRTL: {
-    writingDirection: 'rtl',
   },
   detailsSection: {
     marginTop: 24,

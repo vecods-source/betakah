@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useLocalization } from '../../../src/hooks';
+import { useLocalization, useTheme } from '../../../src/hooks';
 import { UIHeader } from '../../../src/components/ui';
 import { Colors } from '../../../src/constants/colors';
 
@@ -17,6 +17,7 @@ export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
   const { isArabic, setLanguage } = useLocalization();
   const isRTL = i18n.language === 'ar';
+  const { colors, cardBackground, screenBackground, textPrimary, textSecondary } = useTheme();
 
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
 
@@ -76,41 +77,38 @@ export default function SettingsScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: screenBackground }]}>
       <UIHeader title={t('settings.title')} />
 
       {/* Settings Sections */}
       {settingsSections.map((section) => (
         <View key={section.title} style={styles.section}>
-          <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+          <Text style={[styles.sectionTitle, { color: textSecondary }]}>
             {section.title}
           </Text>
-          <View style={styles.sectionCard}>
+          <View style={[styles.sectionCard, { backgroundColor: cardBackground }]}>
             {section.items.map((item, index) => (
               <TouchableOpacity
                 key={item.id}
-                style={[
-                  styles.settingItem,
-                  index < section.items.length - 1 && styles.settingItemBorder,
-                ]}
+                style={styles.settingItem}
                 onPress={item.type === 'link' ? item.onPress : item.onToggle}
                 activeOpacity={0.7}
               >
                 <Feather
                   name={item.icon as any}
                   size={20}
-                  color={Colors.gray[600]}
+                  color={colors.gray[600]}
                 />
-                <Text style={[styles.settingLabel, isRTL && styles.textRTL]}>
+                <Text style={[styles.settingLabel, { color: textPrimary }]}>
                   {item.label}
                 </Text>
                 {item.type === 'toggle' ? (
                   <View style={styles.toggleContainer}>
-                    <Text style={styles.toggleValue}>{item.valueLabel}</Text>
+                    <Text style={[styles.toggleValue, { color: textSecondary }]}>{item.valueLabel}</Text>
                     <Switch
                       value={item.value}
                       onValueChange={item.onToggle}
-                      trackColor={{ false: Colors.gray[300], true: Colors.primary }}
+                      trackColor={{ false: colors.gray[300], true: colors.primary }}
                       thumbColor="#fff"
                     />
                   </View>
@@ -118,14 +116,14 @@ export default function SettingsScreen() {
                   <Switch
                     value={item.value}
                     onValueChange={item.onToggle}
-                    trackColor={{ false: Colors.gray[300], true: Colors.primary }}
+                    trackColor={{ false: colors.gray[300], true: colors.primary }}
                     thumbColor="#fff"
                   />
                 ) : (
                   <Feather
                     name={isRTL ? 'chevron-left' : 'chevron-right'}
                     size={20}
-                    color={Colors.gray[400]}
+                    color={colors.gray[400]}
                   />
                 )}
               </TouchableOpacity>
@@ -135,7 +133,7 @@ export default function SettingsScreen() {
       ))}
 
       {/* Version */}
-      <Text style={styles.versionText}>{t('settings.version')} 1.0.0</Text>
+      <Text style={[styles.versionText, { color: colors.gray[400] }]}>{t('settings.version')} 1.0.0</Text>
     </View>
   );
 }
@@ -154,9 +152,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.gray[500],
     marginBottom: 10,
-    marginLeft: 4,
+    marginStart: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    textAlign: 'left',
   },
   sectionCard: {
     backgroundColor: '#fff',
@@ -169,18 +168,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 14,
   },
-  settingItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
-  },
   settingLabel: {
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
     color: Colors.black,
-  },
-  textRTL: {
-    textAlign: 'right',
+    textAlign: 'left',
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -190,6 +183,7 @@ const styles = StyleSheet.create({
   toggleValue: {
     fontSize: 14,
     color: Colors.gray[500],
+    textAlign: 'left',
   },
   versionText: {
     textAlign: 'center',

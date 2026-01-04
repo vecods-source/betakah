@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,17 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Pressable,
+  Image,
+  ImageSourcePropType,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { useAppSelector } from '../../../src/hooks';
-import { Invitation } from '../../../src/types';
+import { useAppSelector, useAppDispatch, useTheme } from '../../../src/hooks';
+import { fetchMyInvitations } from '../../../src/store/slices/eventsSlice';
+import { Invitation, Event } from '../../../src/types';
 import { InvitationSlideSheet } from '../../../src/components/InvitationSlideSheet';
+import { FilterChips } from '../../../src/components/FilterChips';
 import { Colors } from '../../../src/constants/colors';
 
 type FilterStatus = 'ALL' | 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'MAYBE';
@@ -27,12 +30,27 @@ const getDaysUntil = (dateString: string): number => {
 };
 
 export default function InvitationsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar' || i18n.language?.startsWith('ar');
   const insets = useSafeAreaInsets();
-  const { invitations, isLoading } = useAppSelector((state) => state.events);
+  const dispatch = useAppDispatch();
+  const { isDark, colors, cardBackground, screenBackground, textPrimary, textSecondary, borderColor } = useTheme();
+  const { invitations, isLoadingInvitations, hasFetchedInvitations } = useAppSelector((state) => state.events);
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('ALL');
   const [selectedInvitation, setSelectedInvitation] = useState<Invitation | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch on mount and when language changes
+  useEffect(() => {
+    dispatch(fetchMyInvitations({ upcoming: true, language: i18n.language }));
+  }, [dispatch, i18n.language]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await dispatch(fetchMyInvitations({ upcoming: true, language: i18n.language }));
+    setIsRefreshing(false);
+  }, [dispatch, i18n.language]);
 
   const openSheet = useCallback((invitation: Invitation) => {
     setSelectedInvitation(invitation);
@@ -45,8 +63,16 @@ export default function InvitationsScreen() {
   }, []);
 
   const filteredInvitations = useMemo(() => {
-    if (activeFilter === 'ALL') return invitations;
-    return invitations.filter(inv => inv.rsvpStatus === activeFilter);
+    const filtered = activeFilter === 'ALL'
+      ? invitations
+      : invitations.filter(inv => inv.rsvpStatus === activeFilter);
+
+    // Sort by event date (soonest first)
+    return [...filtered].sort((a, b) => {
+      const dateA = a.event?.startDate ? new Date(a.event.startDate).getTime() : Infinity;
+      const dateB = b.event?.startDate ? new Date(b.event.startDate).getTime() : Infinity;
+      return dateA - dateB;
+    });
   }, [invitations, activeFilter]);
 
   const filterCounts = useMemo(() => ({
@@ -74,45 +100,62 @@ export default function InvitationsScreen() {
     }
   };
 
+  const getImageSource = (event: Event): ImageSourcePropType | undefined => {
+    if (event.coverImage) {
+      return typeof event.coverImage === 'number'
+        ? event.coverImage
+        : { uri: event.coverImage };
+    }
+    if (event.coverImageUrl) {
+      return { uri: event.coverImageUrl };
+    }
+    return undefined;
+  };
+
   const renderInvitationCard = (invitation: Invitation) => {
     const event = invitation.event;
     if (!event) return null;
 
     const daysUntil = getDaysUntil(event.startDate);
+    const imageSource = getImageSource(event);
 
     return (
       <TouchableOpacity
         key={invitation.id}
-        style={styles.invitationCard}
+        style={[styles.invitationCard, { backgroundColor: cardBackground }]}
         onPress={() => openSheet(invitation)}
         activeOpacity={0.7}
       >
+        {imageSource && (
+          <Image source={imageSource} style={styles.cardImage} resizeMode="cover" />
+        )}
         <View style={styles.cardContent}>
           {/* Event Type & Status */}
           <View style={styles.cardHeader}>
-            <Text style={styles.eventType}>{event.type.replace('_', ' ')}</Text>
+            <Text style={[styles.eventType, { color: colors.gray[500], writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{event.type.replace('_', ' ')}</Text>
             <Text style={[
               styles.statusText,
               invitation.rsvpStatus === 'ACCEPTED' && styles.statusAccepted,
               invitation.rsvpStatus === 'DECLINED' && styles.statusDeclined,
               invitation.rsvpStatus === 'MAYBE' && styles.statusMaybe,
+              { writingDirection: isArabic ? 'rtl' : 'ltr' },
             ]}>
               {getStatusLabel(invitation.rsvpStatus)}
             </Text>
           </View>
 
           {/* Title */}
-          <Text style={styles.cardTitle}>{event.title}</Text>
+          <Text style={[styles.cardTitle, { color: textPrimary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{event.title}</Text>
 
           {/* Host */}
-          <Text style={styles.hostText}>
+          <Text style={[styles.hostText, { color: textSecondary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
             {t('home.fromHost', { name: `${event.host?.firstName || ''} ${event.host?.lastName || ''}`.trim() })}
           </Text>
 
           {/* Date & Location */}
           <View style={styles.cardMeta}>
-            <Text style={styles.metaText}>
-              {new Date(event.startDate).toLocaleDateString('en-QA', {
+            <Text style={[styles.metaText, { color: textSecondary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+              {new Date(event.startDate).toLocaleDateString(isArabic ? 'ar-QA' : 'en-QA', {
                 weekday: 'short',
                 month: 'short',
                 day: 'numeric'
@@ -120,7 +163,7 @@ export default function InvitationsScreen() {
               {event.location ? ` · ${event.location}` : ''}
             </Text>
             {daysUntil >= 0 && daysUntil <= 7 && (
-              <Text style={styles.daysText}>
+              <Text style={[styles.daysText, { color: isDark ? colors.gray[600] : colors.gray[600], writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                 {daysUntil === 0 ? t('home.today') : daysUntil === 1 ? t('home.tomorrow') : `${daysUntil} ${t('home.daysLeft')}`}
               </Text>
             )}
@@ -128,8 +171,8 @@ export default function InvitationsScreen() {
 
           {/* Pending Action */}
           {invitation.rsvpStatus === 'PENDING' && (
-            <View style={styles.pendingAction}>
-              <Text style={styles.pendingText}>{t('invitations.tapToRespond')}</Text>
+            <View style={[styles.pendingAction, { borderTopColor: borderColor }]}>
+              <Text style={[styles.pendingText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('invitations.tapToRespond')}</Text>
             </View>
           )}
         </View>
@@ -138,42 +181,23 @@ export default function InvitationsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: screenBackground }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.headerTitle}>{t('invitations.title')}</Text>
+        <Text style={[styles.headerTitle, { color: textPrimary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{t('invitations.title')}</Text>
         {filterCounts.PENDING > 0 && (
-          <View style={styles.pendingBadge}>
-            <Text style={styles.pendingBadgeText}>{filterCounts.PENDING}</Text>
+          <View style={[styles.pendingBadge, { backgroundColor: isDark ? colors.gray[200] : colors.gray[200] }]}>
+            <Text style={[styles.pendingBadgeText, { color: isDark ? colors.gray[700] : colors.gray[700] }]}>{filterCounts.PENDING}</Text>
           </View>
         )}
       </View>
 
       {/* Filters */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {filters.map(filter => (
-          <Pressable
-            key={filter.key}
-            style={[
-              styles.filterChip,
-              activeFilter === filter.key && styles.filterChipActive,
-            ]}
-            onPress={() => setActiveFilter(filter.key)}
-          >
-            <Text style={[
-              styles.filterText,
-              activeFilter === filter.key && styles.filterTextActive,
-            ]}>
-              {filter.label}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <FilterChips
+        filters={filters}
+        activeFilter={activeFilter}
+        onFilterChange={(key) => setActiveFilter(key as FilterStatus)}
+      />
 
       {/* Invitations List */}
       <ScrollView
@@ -181,7 +205,8 @@ export default function InvitationsScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
             tintColor={Colors.primary}
           />
         }
@@ -191,15 +216,15 @@ export default function InvitationsScreen() {
           <View style={styles.listContainer}>
             {filteredInvitations.map(renderInvitationCard)}
           </View>
-        ) : (
+        ) : !isLoadingInvitations && (
           <View style={styles.emptyState}>
-            <Feather name="mail" size={48} color={Colors.gray[300]} />
-            <Text style={styles.emptyTitle}>
+            <Feather name="mail" size={48} color={isDark ? colors.gray[500] : colors.gray[300]} />
+            <Text style={[styles.emptyTitle, { color: textSecondary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
               {activeFilter === 'ALL'
                 ? t('invitations.empty.noInvitations')
                 : t('invitations.empty.noFiltered', { filter: filters.find(f => f.key === activeFilter)?.label.toLowerCase() })}
             </Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptySubtitle, { color: isDark ? colors.gray[500] : colors.gray[400], writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
               {t('invitations.empty.description')}
             </Text>
           </View>
@@ -246,37 +271,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.gray[700],
   },
-  filtersContainer: {
-    maxHeight: 44,
-  },
-  filtersContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterChipActive: {
-    backgroundColor: Colors.black,
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.gray[600],
-    lineHeight: 14,
-    includeFontPadding: false,
-  },
-  filterTextActive: {
-    color: '#fff',
-  },
   scrollView: {
     flex: 1,
   },
@@ -290,6 +284,11 @@ const styles = StyleSheet.create({
   invitationCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
+    overflow: 'hidden',
+  },
+  cardImage: {
+    width: '100%',
+    height: 140,
   },
   cardContent: {
     padding: 16,

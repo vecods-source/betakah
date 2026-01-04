@@ -192,15 +192,15 @@ export default function RegistrationScreen() {
   const renderStep1 = () => (
     <>
       <View style={styles.headerContainer}>
-        <Text style={[styles.title, isRTL && styles.textRTL]}>{t('auth.registration.title')}</Text>
-        <Text style={[styles.subtitle, isRTL && styles.textRTL]}>{t('auth.registration.subtitle')}</Text>
+        <Text style={[styles.title]}>{t('auth.registration.title')}</Text>
+        <Text style={[styles.subtitle]}>{t('auth.registration.subtitle')}</Text>
       </View>
 
       <View style={styles.form}>
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, isRTL && styles.textRTL]}>{t('auth.registration.firstName')}</Text>
+          <Text style={[styles.label]}>{t('auth.registration.firstName')}</Text>
           <TextInput
-            style={[styles.input, isRTL && styles.inputRTL]}
+            style={[styles.input]}
             value={firstName}
             onChangeText={setFirstName}
             placeholder={t('auth.registration.firstNamePlaceholder')}
@@ -211,9 +211,9 @@ export default function RegistrationScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, isRTL && styles.textRTL]}>{t('auth.registration.lastName')}</Text>
+          <Text style={[styles.label]}>{t('auth.registration.lastName')}</Text>
           <TextInput
-            style={[styles.input, isRTL && styles.inputRTL]}
+            style={[styles.input]}
             value={lastName}
             onChangeText={setLastName}
             placeholder={t('auth.registration.lastNamePlaceholder')}
@@ -224,7 +224,7 @@ export default function RegistrationScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, isRTL && styles.textRTL]}>{t('auth.registration.gender')}</Text>
+          <Text style={[styles.label]}>{t('auth.registration.gender')}</Text>
           <View style={styles.genderContainer}>
             <TouchableOpacity
               style={[styles.genderOption, gender === 'MALE' && styles.genderOptionSelected]}
@@ -266,8 +266,8 @@ export default function RegistrationScreen() {
   const renderStep2 = () => (
     <>
       <View style={styles.headerContainer}>
-        <Text style={[styles.title, isRTL && styles.textRTL]}>{t('auth.registration.birthdayStep.title')}</Text>
-        <Text style={[styles.subtitle, isRTL && styles.textRTL]}>{t('auth.registration.birthdayStep.subtitle')}</Text>
+        <Text style={[styles.title]}>{t('auth.registration.birthdayStep.title')}</Text>
+        <Text style={[styles.subtitle]}>{t('auth.registration.birthdayStep.subtitle')}</Text>
       </View>
 
       <View style={styles.datesSection}>
@@ -284,12 +284,12 @@ export default function RegistrationScreen() {
               </Text>
             </View>
           </View>
-          <Feather name="chevron-right" size={20} color={Colors.gray[400]} />
+          <Feather name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={Colors.gray[400]} />
         </TouchableOpacity>
 
         {/* Optional Dates Header */}
         <View style={styles.optionalHeader}>
-          <Text style={[styles.optionalHeaderText, isRTL && styles.textRTL]}>{t('auth.registration.dates.optionalTitle')}</Text>
+          <Text style={[styles.optionalHeaderText]}>{t('auth.registration.dates.optionalTitle')}</Text>
         </View>
 
         {/* Marriage Anniversary - Optional */}
@@ -381,8 +381,8 @@ export default function RegistrationScreen() {
   const renderStep3 = () => (
     <>
       <View style={styles.headerContainer}>
-        <Text style={[styles.title, isRTL && styles.textRTL]}>{t('auth.registration.idVerification.title')}</Text>
-        <Text style={[styles.subtitle, isRTL && styles.textRTL]}>{t('auth.registration.idVerification.subtitle')}</Text>
+        <Text style={[styles.title]}>{t('auth.registration.idVerification.title')}</Text>
+        <Text style={[styles.subtitle]}>{t('auth.registration.idVerification.subtitle')}</Text>
       </View>
 
       <View style={styles.idSection}>
@@ -407,7 +407,7 @@ export default function RegistrationScreen() {
           </TouchableOpacity>
         )}
 
-        <Text style={[styles.privacyNote, isRTL && styles.textRTL]}>
+        <Text style={[styles.privacyNote]}>
           {t('auth.registration.idVerification.privacyNote')}
         </Text>
       </View>
@@ -527,21 +527,19 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   content: { paddingHorizontal: 24, paddingBottom: 40, flexGrow: 1 },
   backButton: { marginTop: 60 },
-  stepIndicator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 24, marginBottom: 28 },
+  stepIndicator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 24, marginBottom: 28, direction: 'ltr' },
   stepCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.gray[100], justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.gray[200] },
   stepCircleActive: { backgroundColor: 'rgba(120, 16, 74, 0.1)', borderColor: Colors.primary },
   stepLine: { width: 32, height: 2, backgroundColor: Colors.gray[200] },
   stepLineActive: { backgroundColor: Colors.primary },
   headerContainer: { marginBottom: 32 },
-  title: { fontSize: 28, fontWeight: '700', color: Colors.black, marginBottom: 12 },
-  subtitle: { fontSize: 16, color: Colors.gray[600], lineHeight: 24 },
-  textRTL: { textAlign: 'right', writingDirection: 'rtl' },
+  title: { fontSize: 28, fontWeight: '700', color: Colors.black, marginBottom: 12, textAlign: 'left' },
+  subtitle: { fontSize: 16, color: Colors.gray[600], lineHeight: 24, textAlign: 'left' },
   form: { gap: 28 },
   inputGroup: { gap: 4 },
-  label: { fontSize: 13, fontWeight: '500', color: Colors.gray[500], marginBottom: 4 },
-  input: { borderBottomWidth: 1, borderBottomColor: Colors.gray[300], paddingVertical: 12, paddingHorizontal: 0, fontSize: 17, color: Colors.black },
+  label: { fontSize: 13, fontWeight: '500', color: Colors.gray[500], marginBottom: 4, textAlign: 'left' },
+  input: { borderBottomWidth: 1, borderBottomColor: Colors.gray[300], paddingVertical: 12, paddingHorizontal: 0, fontSize: 17, color: Colors.black, textAlign: 'left' },
   inputFocused: { borderBottomColor: Colors.primary, borderBottomWidth: 2 },
-  inputRTL: { textAlign: 'right' },
   genderContainer: { flexDirection: 'row', gap: 16, marginTop: 8 },
   genderOption: { flex: 1, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.gray[300], alignItems: 'center' },
   genderOptionSelected: { borderBottomColor: Colors.primary, borderBottomWidth: 2 },
@@ -552,11 +550,11 @@ const styles = StyleSheet.create({
   dateRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   dateIconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.gray[100], justifyContent: 'center', alignItems: 'center' },
   dateIconCircleFilled: { backgroundColor: 'rgba(120, 16, 74, 0.1)' },
-  dateRowLabel: { fontSize: 15, fontWeight: '600', color: Colors.black, marginBottom: 2 },
-  dateRowValue: { fontSize: 14, color: Colors.gray[600] },
+  dateRowLabel: { fontSize: 15, fontWeight: '600', color: Colors.black, marginBottom: 2, textAlign: 'left' },
+  dateRowValue: { fontSize: 14, color: Colors.gray[600], textAlign: 'left' },
   dateRowPlaceholder: { color: Colors.gray[400] },
   optionalHeader: { paddingTop: 24, paddingBottom: 8 },
-  optionalHeaderText: { fontSize: 13, fontWeight: '500', color: Colors.gray[500], textTransform: 'uppercase', letterSpacing: 0.5 },
+  optionalHeaderText: { fontSize: 13, fontWeight: '500', color: Colors.gray[500], textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'left' },
   addDateButton: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 16 },
   addDateButtonText: { fontSize: 15, fontWeight: '600', color: Colors.primary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },

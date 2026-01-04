@@ -122,8 +122,11 @@
       "evening": "Good Evening"
     },
     "upcomingEvents": "Upcoming Events",
+    "upcomingEventsSubtitle": "Your hosted events",
     "pendingInvitations": "Pending Invitations",
+    "pendingInvitationsSubtitle": "Awaiting your response",
     "upcomingDates": "Important Dates",
+    "upcomingDatesSubtitle": "Birthdays, anniversaries & more",
     "noEvents": "No upcoming events",
     "noDates": "No upcoming dates",
     "createFirst": "Create your first event",
@@ -139,7 +142,9 @@
     "swipeToSee": "Swipe to see more",
     "fromHost": "From {{name}}",
     "createEvent": "Create Event",
-    "createEventSubtitle": "Start planning your next gathering"
+    "createEventSubtitle": "Start planning your next gathering",
+    "accept": "Accept",
+    "decline": "Decline"
   },
   "dates": {
     "birthday": "Birthday",
@@ -303,11 +308,14 @@
   },
   "notifications": {
     "title": "Notifications",
-    "empty": {
-      "title": "No notifications",
-      "message": "You're all caught up!"
-    },
-    "markAllRead": "Mark all as read",
+    "empty": "No notifications",
+    "emptyDescription": "You're all caught up! When you receive new notifications, they'll appear here.",
+    "markAllRead": "Mark all read",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "yesterday": "Yesterday",
+    "daysAgo": "{{count}}d ago",
     "types": {
       "invitation": "New Invitation",
       "rsvp": "RSVP Update",

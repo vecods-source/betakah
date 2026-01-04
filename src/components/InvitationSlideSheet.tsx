@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAppDispatch, useLocalization } from '../hooks';
+import { useAppDispatch, useLocalization, useTheme } from '../hooks';
 import { updateRsvp } from '../store/slices/eventsSlice';
 import { Invitation, Event as EventType } from '../types';
 import { InvitationCard } from './InvitationCard';
@@ -53,6 +53,7 @@ export function InvitationSlideSheet({
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
   const { isArabic } = useLocalization();
+  const { isDark, colors, cardBackground, screenBackground, textPrimary, textSecondary, borderColor } = useTheme();
 
   const slideAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current;
 
@@ -156,17 +157,17 @@ export function InvitationSlideSheet({
         <Animated.View
           style={[
             styles.sheet,
-            { transform: [{ translateY: slideAnim }] },
+            { transform: [{ translateY: slideAnim }], backgroundColor: isDark ? colors.gray[100] : colors.gray[100] },
           ]}
           {...panResponder.panHandlers}
         >
           {/* Header */}
-          <View style={styles.sheetHeader}>
-            <View style={styles.handleBar} />
-            <Text style={[styles.sheetTitle, isArabic && styles.textRTL]}>
+          <View style={[styles.sheetHeader, { backgroundColor: isDark ? colors.gray[100] : colors.gray[100] }]}>
+            <View style={[styles.handleBar, { backgroundColor: isDark ? colors.gray[400] : colors.gray[300] }]} />
+            <Text style={[styles.sheetTitle, { color: textPrimary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
               {sheetTitle}
             </Text>
-            <Text style={[styles.sheetSubtitle, isArabic && styles.textRTL]}>
+            <Text style={[styles.sheetSubtitle, { color: textSecondary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
               {sheetSubtitle}
             </Text>
           </View>
@@ -190,7 +191,7 @@ export function InvitationSlideSheet({
 
           {/* RSVP Buttons - only show when not in preview mode */}
           {!isPreview && (
-            <View style={[styles.rsvpFooter, { paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
+            <View style={[styles.rsvpFooter, { paddingBottom: Math.max(insets.bottom + 16, 24), backgroundColor: isDark ? colors.gray[100] : colors.gray[100] }]}>
               {currentStatus && currentStatus !== 'PENDING' && (
                 <View style={[
                   styles.sheetStatusBadge,
@@ -203,7 +204,7 @@ export function InvitationSlideSheet({
                     size={16}
                     color="#fff"
                   />
-                  <Text style={styles.sheetStatusText}>
+                  <Text style={[styles.sheetStatusText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
                     {currentStatus === 'ACCEPTED'
                       ? (isArabic ? 'تم القبول' : 'Accepted')
                       : currentStatus === 'DECLINED'
@@ -223,25 +224,8 @@ export function InvitationSlideSheet({
                   onPress={() => handleRSVP('accept')}
                 >
                   <Feather name="check" size={18} color="#fff" />
-                  <Text style={styles.acceptButtonText}>
-                    {isArabic ? 'نعم' : 'Yes'}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.rsvpButtonCompact,
-                    styles.maybeButton,
-                    currentStatus === 'MAYBE' && styles.activeMaybeButton,
-                  ]}
-                  onPress={() => handleRSVP('maybe')}
-                >
-                  <Feather name="help-circle" size={18} color={currentStatus === 'MAYBE' ? '#fff' : Colors.gray[600]} />
-                  <Text style={[
-                    styles.maybeButtonText,
-                    currentStatus === 'MAYBE' && styles.activeMaybeText,
-                  ]}>
-                    {isArabic ? 'ربما' : 'Maybe'}
+                  <Text style={[styles.acceptButtonText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
+                    {isArabic ? 'قبول' : 'Accept'}
                   </Text>
                 </TouchableOpacity>
 
@@ -249,16 +233,18 @@ export function InvitationSlideSheet({
                   style={[
                     styles.rsvpButtonCompact,
                     styles.declineButton,
+                    { backgroundColor: cardBackground, borderColor: borderColor },
                     currentStatus === 'DECLINED' && styles.activeDeclineButton,
                   ]}
                   onPress={() => handleRSVP('decline')}
                 >
-                  <Feather name="x" size={18} color={currentStatus === 'DECLINED' ? '#fff' : Colors.gray[600]} />
+                  <Feather name="x" size={18} color={currentStatus === 'DECLINED' ? '#fff' : (isDark ? colors.gray[700] : colors.gray[600])} />
                   <Text style={[
                     styles.declineButtonText,
+                    { color: isDark ? colors.gray[700] : colors.gray[600], writingDirection: isArabic ? 'rtl' : 'ltr' },
                     currentStatus === 'DECLINED' && styles.activeDeclineText,
                   ]}>
-                    {isArabic ? 'لا' : 'No'}
+                    {isArabic ? 'رفض' : 'Decline'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -316,10 +302,6 @@ const styles = StyleSheet.create({
     color: Colors.gray[500],
     marginTop: 4,
     textAlign: 'center',
-  },
-  textRTL: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
   },
   sheetContent: {
     flex: 1,

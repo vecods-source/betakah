@@ -1,42 +1,87 @@
-import React, { useEffect, useCallback, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Pressable, Text, Animated, Dimensions, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAppDispatch, useAppSelector } from '../../src/hooks';
-import { fetchUpcomingEvents, fetchMyInvitations } from '../../src/store/slices/eventsSlice';
-import { fetchUpcomingDates } from '../../src/store/slices/importantDatesSlice';
-import { Event, Invitation, ImportantDate } from '../../src/types';
-import { UIStack, UISpacer, UIText, UIIcon, UIBadge, UIEmptyState } from '../../src/components/ui';
-import { InvitationSlideSheet } from '../../src/components/InvitationSlideSheet';
-import { Colors } from '../../src/constants/colors';
+import React, {
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  Pressable,
+  Text,
+  Animated,
+  Dimensions,
+  ImageBackground,
+  ImageSourcePropType,
+  I18nManager,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppDispatch, useAppSelector, useTheme } from "../../src/hooks";
+import {
+  fetchUpcomingEvents,
+  fetchMyInvitations,
+} from "../../src/store/slices/eventsSlice";
+import { fetchUpcomingDates } from "../../src/store/slices/importantDatesSlice";
+import { Event, Invitation, ImportantDate } from "../../src/types";
+import {
+  UIStack,
+  UISpacer,
+  UIText,
+  UIIcon,
+  UIBadge,
+  UIEmptyState,
+} from "../../src/components/ui";
+import { InvitationSlideSheet } from "../../src/components/InvitationSlideSheet";
+import { Colors } from "../../src/constants/colors";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DATE_CARD_WIDTH = SCREEN_WIDTH * 0.7;
 const INVITATION_CARD_WIDTH = SCREEN_WIDTH * 0.75;
-const EVENT_CARD_WIDTH = SCREEN_WIDTH * 0.82;
+const EVENT_CARD_WIDTH = SCREEN_WIDTH * 0.65;
+const INVITATION_CARD_WIDTH_NEW = SCREEN_WIDTH * 0.7;
 
 const getDaysUntil = (dateString: string): number => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const targetDate = new Date(dateString);
   targetDate.setHours(0, 0, 0, 0);
-  return Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.ceil(
+    (targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  );
 };
 
 export default function HomeScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar' || i18n.language?.startsWith('ar') || I18nManager.isRTL;
   const insets = useSafeAreaInsets();
-  const { upcomingEvents, invitations, isLoading: eventsLoading } = useAppSelector((state) => state.events);
-  const { upcomingDates, isLoading: datesLoading } = useAppSelector((state) => state.importantDates);
+  const { isDark, colors, cardBackground, screenBackground, textPrimary, textSecondary, textTertiary, borderColor } = useTheme();
+  const {
+    upcomingEvents,
+    invitations,
+    isLoadingUpcoming,
+    isLoadingInvitations,
+    hasFetchedUpcoming,
+    hasFetchedInvitations,
+  } = useAppSelector((state) => state.events);
+  const { upcomingDates, isLoading: datesLoading } = useAppSelector(
+    (state) => state.importantDates
+  );
   const { unreadCount } = useAppSelector((state) => state.notifications);
 
-  const [selectedInvitation, setSelectedInvitation] = useState<Invitation | null>(null);
+  const [selectedInvitation, setSelectedInvitation] =
+    useState<Invitation | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -53,156 +98,162 @@ export default function HomeScreen() {
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 60],
     outputRange: [1, 0],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
-  const pendingInvitations = useMemo(() =>
-    invitations.filter(inv => inv.rsvpStatus === 'PENDING').slice(0, 3),
+  const allPendingInvitations = useMemo(
+    () => (invitations || []).filter((inv) => inv.rsvpStatus === "PENDING"),
     [invitations]
   );
 
-  const loadData = useCallback(() => {
-    dispatch(fetchUpcomingEvents());
-    dispatch(fetchMyInvitations({ upcoming: true }));
-    dispatch(fetchUpcomingDates(30));
-  }, [dispatch]);
+  const pendingInvitations = allPendingInvitations.slice(0, 3);
 
+  // Initial load and language change
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    dispatch(fetchUpcomingEvents(i18n.language));
+    dispatch(fetchMyInvitations({ upcoming: true, language: i18n.language }));
+    dispatch(fetchUpcomingDates({ days: 30, language: i18n.language }));
+  }, [dispatch, i18n.language]);
 
-  const isLoading = eventsLoading || datesLoading;
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      dispatch(fetchUpcomingEvents(i18n.language)),
+      dispatch(fetchMyInvitations({ upcoming: true, language: i18n.language })),
+      dispatch(fetchUpcomingDates({ days: 30, language: i18n.language })),
+    ]);
+    setIsRefreshing(false);
+  }, [dispatch, i18n.language]);
+
+  const isLoading = isLoadingUpcoming || isLoadingInvitations || datesLoading;
+
+  const getImageSource = (event: Event): ImageSourcePropType | undefined => {
+    if (event.coverImage) {
+      return typeof event.coverImage === 'number'
+        ? event.coverImage
+        : { uri: event.coverImage };
+    }
+    if (event.coverImageUrl) {
+      return { uri: event.coverImageUrl };
+    }
+    return undefined;
+  };
 
   const renderEventCard = (item: Event, index: number) => {
-    const daysUntil = getDaysUntil(item.startDate);
-    const isToday = daysUntil === 0;
-    const isTomorrow = daysUntil === 1;
-    const isPast = daysUntil < 0;
     const config = getEventTypeConfig(item.type);
+    const imageSource = getImageSource(item);
+
+    const cardContent = (
+      <>
+        {/* Background icon (only when no image) */}
+        {!imageSource && (
+          <MaterialCommunityIcons
+            name={config.icon as any}
+            size={80}
+            color="rgba(255,255,255,0.1)"
+            style={styles.eventCardBgIcon}
+          />
+        )}
+
+        {/* Gradient overlay for text readability */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
+          style={styles.eventCardOverlay}
+        />
+
+        {/* Content at bottom */}
+        <View style={styles.eventCardContent}>
+          <Text style={[styles.eventCardTitle, { writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <View style={styles.eventCardMeta}>
+            <View style={styles.eventCardMetaItem}>
+              <Feather name="calendar" size={12} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.eventCardMetaText}>
+                {new Date(item.startDate).toLocaleDateString(isRTL ? "ar-QA" : "en-QA", {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </Text>
+            </View>
+            {item.location && (
+              <View style={styles.eventCardMetaItem}>
+                <Feather name="map-pin" size={12} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.eventCardMetaText} numberOfLines={1}>
+                  {item.location}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </>
+    );
 
     return (
       <TouchableOpacity
         key={item.id}
-        style={[styles.eventImageCard, index === 0 && styles.eventImageCardFirst]}
-        onPress={() => router.push({ pathname: '/(tabs)/events/[id]', params: { id: item.id } })}
+        style={styles.eventImageCard}
+        onPress={() =>
+          router.push({
+            pathname: "/(tabs)/events/[id]",
+            params: { id: item.id },
+          })
+        }
         activeOpacity={0.9}
       >
-        <LinearGradient
-          colors={config.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.eventCardGradient}
-        >
-          {/* Content */}
-          <View style={styles.eventCardContentWrapper}>
-          {/* Top Row: Type Badge & Countdown */}
-          <View style={styles.eventCardTopRow}>
-            <View style={styles.eventCardTypeBadge}>
-              <Text style={styles.eventCardTypeText}>
-                {t(`events.types.${item.type.toLowerCase()}`)}
-              </Text>
-            </View>
-            <View style={[
-              styles.eventCardCountdown,
-              isToday && styles.eventCardCountdownToday
-            ]}>
-              {isToday ? (
-                <Text style={styles.eventCardCountdownTodayText}>{t('home.today')}</Text>
-              ) : isTomorrow ? (
-                <Text style={styles.eventCardCountdownText}>{t('home.tomorrow')}</Text>
-              ) : isPast ? (
-                <Feather name="check" size={14} color="#fff" />
-              ) : (
-                <>
-                  <Text style={styles.eventCardCountdownNumber}>{daysUntil}</Text>
-                  <Text style={styles.eventCardCountdownLabel}>{t('home.daysLeft')}</Text>
-                </>
-              )}
-            </View>
-          </View>
-
-          {/* Bottom: Title & Meta */}
-          <View style={styles.eventCardBottom}>
-            <Text style={styles.eventCardTitle} numberOfLines={2}>
-              {item.title}
-            </Text>
-            <View style={styles.eventCardMeta}>
-              <View style={styles.eventCardMetaItem}>
-                <Feather name="calendar" size={12} color="rgba(255,255,255,0.8)" />
-                <Text style={styles.eventCardMetaText}>
-                  {new Date(item.startDate).toLocaleDateString('en-QA', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </Text>
-              </View>
-              {item.location && (
-                <View style={styles.eventCardMetaItem}>
-                  <Feather name="map-pin" size={12} color="rgba(255,255,255,0.8)" />
-                  <Text style={styles.eventCardMetaText} numberOfLines={1}>
-                    {item.location}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-          </View>
-        </LinearGradient>
+        {imageSource ? (
+          <ImageBackground
+            source={imageSource}
+            style={styles.eventCardGradient}
+            resizeMode="cover"
+          >
+            {cardContent}
+          </ImageBackground>
+        ) : (
+          <LinearGradient
+            colors={[Colors.primary, Colors.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.eventCardGradient}
+          >
+            {cardContent}
+          </LinearGradient>
+        )}
       </TouchableOpacity>
     );
   };
 
   const getEventTypeConfig = (type: string) => {
     switch (type) {
-      case 'WEDDING':
-        return {
-          icon: 'ring',
-          gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('events.types.wedding'),
-        };
-      case 'BIRTHDAY':
-        return {
-          icon: 'cake-variant',
-          gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('events.types.birthday'),
-        };
-      case 'GRADUATION':
-        return {
-          icon: 'school',
-          gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('events.types.graduation'),
-        };
-      case 'BABY_SHOWER':
-        return {
-          icon: 'baby-carriage',
-          gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('events.types.baby_shower'),
-        };
-      case 'ENGAGEMENT':
-        return {
-          icon: 'heart-multiple',
-          gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('events.types.engagement'),
-        };
-      case 'CORPORATE':
-        return {
-          icon: 'briefcase',
-          gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('events.types.corporate'),
-        };
-      case 'RELIGIOUS':
-        return {
-          icon: 'mosque',
-          gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('events.types.religious'),
-        };
+      case "WEDDING":
+        return { icon: "ring", label: t("events.types.wedding") };
+      case "BIRTHDAY":
+        return { icon: "cake-variant", label: t("events.types.birthday") };
+      case "GRADUATION":
+        return { icon: "school", label: t("events.types.graduation") };
+      case "BABY_SHOWER":
+        return { icon: "baby-carriage", label: t("events.types.baby_shower") };
+      case "ENGAGEMENT":
+        return { icon: "heart-multiple", label: t("events.types.engagement") };
+      case "CORPORATE":
+        return { icon: "briefcase", label: t("events.types.corporate") };
+      case "RELIGIOUS":
+        return { icon: "mosque", label: t("events.types.religious") };
       default:
-        return {
-          icon: 'calendar-star',
-          gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('events.types.social'),
-        };
+        return { icon: "calendar-star", label: t("events.types.social") };
+    }
+  };
+
+  const handleQuickRsvp = async (invitation: Invitation, status: 'accept' | 'decline' | 'maybe') => {
+    const rsvpStatus = status === 'accept' ? 'ACCEPTED' : status === 'decline' ? 'DECLINED' : 'MAYBE';
+    try {
+      await dispatch({
+        type: 'events/updateRsvp',
+        payload: { invitationId: invitation.id, status: rsvpStatus }
+      });
+    } catch (error) {
+      // Handle error silently
     }
   };
 
@@ -210,95 +261,118 @@ export default function HomeScreen() {
     const event = invitation.event;
     if (!event) return null;
 
-    const daysUntil = getDaysUntil(event.startDate);
-    const hostName = `${event.host?.firstName || ''} ${event.host?.lastName || ''}`.trim();
+    const hostName = `${event.host?.firstName || ""} ${
+      event.host?.lastName || ""
+    }`.trim();
     const config = getEventTypeConfig(event.type);
-    const isToday = daysUntil === 0;
-    const isTomorrow = daysUntil === 1;
+    const daysUntil = getDaysUntil(event.startDate);
+    const daysText =
+      daysUntil === 0
+        ? t("home.today")
+        : daysUntil === 1
+        ? t("home.tomorrow")
+        : `${daysUntil} ${t("home.daysLeft")}`;
+    const imageSource = getImageSource(event);
+
+    const topContent = (
+      <>
+        {/* Gradient overlay for text readability */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.6)']}
+          style={styles.invitationCardOverlay}
+        />
+        {!imageSource && (
+          <MaterialCommunityIcons
+            name={config.icon as any}
+            size={32}
+            color="rgba(255,255,255,0.3)"
+            style={styles.invitationIconBg}
+          />
+        )}
+        <View style={styles.invitationCardTopContent}>
+          <Text style={[styles.invitationCardTitle, { writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>
+            {event.title}
+          </Text>
+          <Text style={[styles.invitationMetaText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+            {hostName} · {daysText}
+          </Text>
+        </View>
+      </>
+    );
 
     return (
       <TouchableOpacity
         key={invitation.id}
-        style={[styles.invitationCard, index === 0 && styles.invitationCardFirst]}
+        style={[styles.invitationCardNew, index === 0 && { marginLeft: 0 }]}
         onPress={() => openSheet(invitation)}
-        activeOpacity={0.9}
+        activeOpacity={0.95}
       >
-        <LinearGradient
-          colors={config.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.invitationGradient}
-        >
-          {/* Top section: Event type & countdown */}
-          <View style={styles.invitationTop}>
-            <View style={styles.invitationTypePill}>
-              <MaterialCommunityIcons name={config.icon as any} size={14} color="#fff" />
-              <Text style={styles.invitationTypeText}>{config.label}</Text>
-            </View>
-            <View style={styles.invitationDaysBadge}>
-              {isToday ? (
-                <Text style={styles.invitationDaysText}>{t('home.today')}</Text>
-              ) : isTomorrow ? (
-                <Text style={styles.invitationDaysText}>{t('home.tomorrow')}</Text>
-              ) : (
-                <>
-                  <Text style={styles.invitationDaysNumber}>{daysUntil}</Text>
-                  <Text style={styles.invitationDaysLabel}>{t('home.daysLeft')}</Text>
-                </>
-              )}
-            </View>
+        {/* Top: Image or Primary color section with event info */}
+        {imageSource ? (
+          <ImageBackground
+            source={imageSource}
+            style={styles.invitationCardTop}
+            resizeMode="cover"
+          >
+            {topContent}
+          </ImageBackground>
+        ) : (
+          <View style={styles.invitationCardTop}>
+            {topContent}
           </View>
+        )}
 
-          {/* Middle: Event title */}
-          <View style={styles.invitationMiddle}>
-            <Text style={styles.invitationTitle} numberOfLines={2}>
-              {event.title}
-            </Text>
-          </View>
-
-          {/* Bottom section: Host & Date */}
-          <View style={styles.invitationBottom}>
-            <View style={styles.invitationHostRow}>
-              <Feather name="user" size={12} color="rgba(255,255,255,0.8)" />
-              <Text style={styles.invitationHostText}>{hostName}</Text>
-            </View>
-            <View style={styles.invitationDateRow}>
-              <Feather name="calendar" size={12} color="rgba(255,255,255,0.8)" />
-              <Text style={styles.invitationDateText}>
-                {new Date(event.startDate).toLocaleDateString('en-QA', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
+        {/* Bottom: Action buttons */}
+        <View style={[styles.invitationCardBottom, { backgroundColor: cardBackground }, isRTL && styles.invitationCardBottomRTL]}>
+          <TouchableOpacity
+            style={[styles.rsvpBtnAccept, isRTL && styles.rsvpBtnRTL]}
+            onPress={() => openSheet(invitation)}
+          >
+            <Feather name="check" size={16} color="#fff" />
+            <Text style={[styles.rsvpBtnAcceptText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('home.accept')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.rsvpBtnDecline, { backgroundColor: isDark ? colors.gray[200] : colors.gray[100] }, isRTL && styles.rsvpBtnRTL]}
+            onPress={() => openSheet(invitation)}
+          >
+            <Feather name="x" size={16} color={isDark ? colors.gray[700] : colors.gray[600]} />
+            <Text style={[styles.rsvpBtnDeclineText, { color: isDark ? colors.gray[700] : colors.gray[600], writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{t('home.decline')}</Text>
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
     );
   };
 
   const getDateTypeConfig = (type: string) => {
     switch (type) {
-      case 'BIRTHDAY':
+      case "BIRTHDAY":
         return {
-          icon: 'cake-variant' as const,
+          icon: "cake-variant" as const,
           gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('dates.birthday'),
+          label: t("dates.birthday"),
         };
-      case 'ANNIVERSARY':
+      case "ANNIVERSARY":
         return {
-          icon: 'heart' as const,
+          icon: "heart" as const,
           gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('dates.anniversary'),
+          label: t("dates.anniversary"),
         };
       default:
         return {
-          icon: 'star' as const,
+          icon: "star" as const,
           gradient: [Colors.primary, Colors.primaryDark] as [string, string],
-          label: t('dates.special'),
+          label: t("dates.special"),
         };
     }
+  };
+
+  const getDateImageSource = (date: ImportantDate): ImageSourcePropType | undefined => {
+    if (date.coverImage) {
+      return typeof date.coverImage === 'number'
+        ? date.coverImage
+        : { uri: date.coverImage };
+    }
+    return undefined;
   };
 
   const renderDateCard = (date: ImportantDate, index: number) => {
@@ -306,6 +380,84 @@ export default function HomeScreen() {
     const config = getDateTypeConfig(date.type);
     const isToday = daysUntil === 0;
     const isTomorrow = daysUntil === 1;
+    const imageSource = getDateImageSource(date);
+
+    const cardContent = (
+      <>
+        {/* Gradient overlay for text readability */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
+          style={styles.dateCardOverlay}
+        />
+
+        {/* Background icon (only when no image) */}
+        {!imageSource && (
+          <MaterialCommunityIcons
+            name={config.icon}
+            size={60}
+            color="rgba(255,255,255,0.15)"
+            style={styles.dateCardBgIcon}
+          />
+        )}
+
+        {/* Main content */}
+        <View style={styles.dateCardContent}>
+          {/* Top: Type badge */}
+          <View style={[styles.dateTypeBadge, isRTL && styles.dateTypeBadgeRTL]}>
+            <MaterialCommunityIcons
+              name={config.icon}
+              size={14}
+              color="#fff"
+            />
+            <Text style={[styles.dateTypeText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{config.label}</Text>
+          </View>
+
+          {/* Title */}
+          <Text style={[styles.dateCardTitle, { writingDirection: isRTL ? 'rtl' : 'ltr' }]} numberOfLines={2}>
+            {date.title}
+          </Text>
+
+          {/* Bottom row */}
+          <View style={[styles.dateBottomRow, isRTL && styles.dateBottomRowRTL]}>
+            {/* Date */}
+            <View style={[styles.dateDateInfo, isRTL && styles.dateDateInfoRTL]}>
+              <Feather
+                name="calendar"
+                size={13}
+                color="rgba(255,255,255,0.9)"
+              />
+              <Text style={[styles.dateDateText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                {new Date(date.date).toLocaleDateString(isRTL ? "ar-QA" : "en-QA", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </Text>
+            </View>
+
+            {/* Countdown */}
+            <View style={styles.dateCountdownBadge}>
+              {isToday ? (
+                <Text style={[styles.dateCountdownToday, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                  {t("home.today")}
+                </Text>
+              ) : isTomorrow ? (
+                <Text style={[styles.dateCountdownTomorrow, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                  {t("home.tomorrow")}
+                </Text>
+              ) : (
+                <>
+                  <Text style={[styles.dateCountdownNumber, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>{daysUntil}</Text>
+                  <Text style={[styles.dateCountdownLabel, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    {t("home.daysLeft")}
+                  </Text>
+                </>
+              )}
+            </View>
+          </View>
+        </View>
+      </>
+    );
 
     return (
       <TouchableOpacity
@@ -313,82 +465,113 @@ export default function HomeScreen() {
         style={[styles.dateCard, index === 0 && styles.dateCardFirst]}
         activeOpacity={0.9}
       >
-        <LinearGradient
-          colors={config.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.dateCardGradient}
-        >
-          {/* Main content */}
-          <View style={styles.dateCardContent}>
-            {/* Top: Type badge */}
-            <View style={styles.dateTypeBadge}>
-              <MaterialCommunityIcons name={config.icon} size={14} color="#fff" />
-              <Text style={styles.dateTypeText}>{config.label}</Text>
-            </View>
-
-            {/* Title */}
-            <Text style={styles.dateCardTitle} numberOfLines={2}>
-              {date.title}
-            </Text>
-
-            {/* Bottom row */}
-            <View style={styles.dateBottomRow}>
-              {/* Date */}
-              <View style={styles.dateDateInfo}>
-                <Feather name="calendar" size={13} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.dateDateText}>
-                  {new Date(date.date).toLocaleDateString('en-QA', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </Text>
-              </View>
-
-              {/* Countdown */}
-              <View style={styles.dateCountdownBadge}>
-                {isToday ? (
-                  <Text style={styles.dateCountdownToday}>{t('home.today')}</Text>
-                ) : isTomorrow ? (
-                  <Text style={styles.dateCountdownTomorrow}>{t('home.tomorrow')}</Text>
-                ) : (
-                  <>
-                    <Text style={styles.dateCountdownNumber}>{daysUntil}</Text>
-                    <Text style={styles.dateCountdownLabel}>{t('home.daysLeft')}</Text>
-                  </>
-                )}
-              </View>
-            </View>
-          </View>
-        </LinearGradient>
+        {imageSource ? (
+          <ImageBackground
+            source={imageSource}
+            style={styles.dateCardGradient}
+            resizeMode="cover"
+          >
+            {cardContent}
+          </ImageBackground>
+        ) : (
+          <LinearGradient
+            colors={config.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.dateCardGradient}
+          >
+            {cardContent}
+          </LinearGradient>
+        )}
       </TouchableOpacity>
     );
   };
 
-  const SectionHeader = ({ title, onViewAll, showViewAll = true }: { title: string; onViewAll?: () => void; showViewAll?: boolean }) => (
-    <View style={styles.sectionHeader}>
-      <UIText size={18} weight="semibold" color="#1a202c">{title}</UIText>
+  const SectionHeader = ({
+    title,
+    subtitle,
+    onViewAll,
+    showViewAll = true,
+  }: {
+    title: string;
+    subtitle?: string;
+    onViewAll?: () => void;
+    showViewAll?: boolean;
+  }) => (
+    <View
+      style={{
+        width: SCREEN_WIDTH,
+        alignSelf: 'stretch',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        marginBottom: 18,
+        paddingHorizontal: 16,
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            width: '100%',
+            fontSize: 22,
+            fontWeight: '700',
+            color: textPrimary,
+            letterSpacing: -0.5,
+            writingDirection: isRTL ? 'rtl' : 'ltr',
+          }}
+        >
+          {title}
+        </Text>
+        {subtitle && (
+          <Text
+            style={{
+              width: '100%',
+              fontSize: 13,
+              fontWeight: '300',
+              color: textSecondary,
+              marginTop: 2,
+              letterSpacing: 0.2,
+              writingDirection: isRTL ? 'rtl' : 'ltr',
+            }}
+          >
+            {subtitle}
+          </Text>
+        )}
+      </View>
       {showViewAll && onViewAll && (
-        <TouchableOpacity onPress={onViewAll}>
-          <UIText size={14} weight="medium" color={Colors.primary}>{t('home.viewAll')}</UIText>
+        <TouchableOpacity
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 4,
+            gap: 4,
+          }}
+          onPress={onViewAll}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '500', color: colors.primary }}>
+            {t("home.viewAll")}
+          </Text>
+          <Feather name={isRTL ? "chevron-left" : "chevron-right"} size={16} color={colors.primary} />
         </TouchableOpacity>
       )}
     </View>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: screenBackground }]}>
       {/* Status bar background */}
-      <View style={[styles.statusBarBg, { height: insets.top }]} />
+      <View style={[styles.statusBarBg, { height: insets.top, backgroundColor: screenBackground }]} />
 
       <Animated.ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 80 },
+        ]}
         refreshControl={
           <RefreshControl
-            refreshing={isLoading}
-            onRefresh={loadData}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
             tintColor={Colors.primary}
             colors={[Colors.primary]}
           />
@@ -403,11 +586,12 @@ export default function HomeScreen() {
         {/* 1. Upcoming Important Dates Section */}
         <View style={styles.datesSection}>
           <SectionHeader
-            title={t('home.upcomingDates')}
-            onViewAll={() => router.push('/(tabs)/profile')}
-            showViewAll={upcomingDates.length > 0}
+            title={t("home.upcomingDates")}
+            subtitle={t("home.upcomingDatesSubtitle")}
+            onViewAll={() => router.push("/(tabs)/profile")}
+            showViewAll={(upcomingDates || []).length > 0}
           />
-          {upcomingDates.length > 0 ? (
+          {(upcomingDates || []).length > 0 ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -415,7 +599,9 @@ export default function HomeScreen() {
               decelerationRate="fast"
               snapToInterval={DATE_CARD_WIDTH + 16}
             >
-              {upcomingDates.slice(0, 6).map((date, index) => renderDateCard(date, index))}
+              {(upcomingDates || [])
+                .slice(0, 6)
+                .map((date, index) => renderDateCard(date, index))}
             </ScrollView>
           ) : (
             !isLoading && (
@@ -427,18 +613,26 @@ export default function HomeScreen() {
                   style={styles.emptyDatesGradient}
                 >
                   <View style={styles.emptyDatesIconCircle}>
-                    <MaterialCommunityIcons name="heart" size={28} color="#fff" />
+                    <MaterialCommunityIcons
+                      name="heart"
+                      size={28}
+                      color="#fff"
+                    />
                   </View>
-                  <Text style={styles.emptyDatesTitle}>{t('home.noDates')}</Text>
-                  <Text style={styles.emptyDatesSubtitle}>
-                    {t('home.addDatesDesc')}
+                  <Text style={[styles.emptyDatesTitle, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    {t("home.noDates")}
+                  </Text>
+                  <Text style={[styles.emptyDatesSubtitle, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    {t("home.addDatesDesc")}
                   </Text>
                   <TouchableOpacity
-                    style={styles.emptyDatesButton}
-                    onPress={() => router.push('/(tabs)/profile')}
+                    style={[styles.emptyDatesButton, isRTL && { flexDirection: 'row-reverse' }]}
+                    onPress={() => router.push("/(tabs)/profile")}
                   >
                     <Feather name="plus" size={16} color={Colors.primary} />
-                    <Text style={styles.emptyDatesButtonText}>{t('home.addDates')}</Text>
+                    <Text style={[styles.emptyDatesButtonText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                      {t("home.addDates")}
+                    </Text>
                   </TouchableOpacity>
                 </LinearGradient>
               </View>
@@ -450,18 +644,21 @@ export default function HomeScreen() {
         {pendingInvitations.length > 0 && (
           <View style={styles.invitationsSection}>
             <SectionHeader
-              title={t('home.pendingInvitations')}
-              onViewAll={() => router.push('/(tabs)/invitations')}
-              showViewAll={pendingInvitations.length > 0}
+              title={t("home.pendingInvitations")}
+              subtitle={t("home.pendingInvitationsSubtitle")}
+              onViewAll={() => router.push("/(tabs)/invitations")}
+              showViewAll={allPendingInvitations.length > 3}
             />
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.invitationsScrollContent}
               decelerationRate="fast"
-              snapToInterval={INVITATION_CARD_WIDTH + 16}
+              snapToInterval={INVITATION_CARD_WIDTH_NEW + 12}
             >
-              {pendingInvitations.map((inv, index) => renderInvitationCard(inv, index))}
+              {pendingInvitations
+                .slice(0, 5)
+                .map((inv, index) => renderInvitationCard(inv, index))}
             </ScrollView>
           </View>
         )}
@@ -469,37 +666,48 @@ export default function HomeScreen() {
         {/* 3. Upcoming Events Section */}
         <View style={styles.eventsSection}>
           <SectionHeader
-            title={t('home.upcomingEvents')}
-            onViewAll={() => router.push('/(tabs)/events')}
-            showViewAll={upcomingEvents.length > 0}
+            title={t("home.upcomingEvents")}
+            subtitle={t("home.upcomingEventsSubtitle")}
+            onViewAll={() => router.push("/(tabs)/events")}
+            showViewAll={(upcomingEvents || []).length > 3}
           />
-          {upcomingEvents.length > 0 ? (
+          {(upcomingEvents || []).length > 0 ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.eventsScrollContent}
               decelerationRate="fast"
-              snapToInterval={EVENT_CARD_WIDTH + 16}
+              snapToInterval={EVENT_CARD_WIDTH + 12}
             >
-              {upcomingEvents.slice(0, 5).map((event, index) => renderEventCard(event, index))}
+              {(upcomingEvents || [])
+                .slice(0, 5)
+                .map((event, index) => renderEventCard(event, index))}
             </ScrollView>
           ) : (
             !isLoading && (
               <View style={styles.emptyEventsWrapper}>
-                <View style={styles.emptyEventsCard}>
-                  <View style={styles.emptyEventsIconCircle}>
-                    <MaterialCommunityIcons name="calendar-blank" size={28} color={Colors.primary} />
+                <View style={[styles.emptyEventsCard, { backgroundColor: cardBackground, borderColor: borderColor }]}>
+                  <View style={[styles.emptyEventsIconCircle, { backgroundColor: isDark ? `${colors.primary}20` : `${colors.primary}10` }]}>
+                    <MaterialCommunityIcons
+                      name="calendar-blank"
+                      size={28}
+                      color={colors.primary}
+                    />
                   </View>
-                  <Text style={styles.emptyEventsTitle}>{t('home.noEvents')}</Text>
-                  <Text style={styles.emptyEventsSubtitle}>
-                    {t('home.createEventDesc')}
+                  <Text style={[styles.emptyEventsTitle, { color: textPrimary, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    {t("home.noEvents")}
+                  </Text>
+                  <Text style={[styles.emptyEventsSubtitle, { color: textSecondary, writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                    {t("home.createEventDesc")}
                   </Text>
                   <TouchableOpacity
-                    style={styles.emptyEventsButton}
-                    onPress={() => router.push('/modals/create-event')}
+                    style={[styles.emptyEventsButton, isRTL && { flexDirection: 'row-reverse' }]}
+                    onPress={() => router.push("/modals/create-event")}
                   >
                     <Feather name="plus" size={16} color="#fff" />
-                    <Text style={styles.emptyEventsButtonText}>{t('home.createFirst')}</Text>
+                    <Text style={[styles.emptyEventsButtonText, { writingDirection: isRTL ? 'rtl' : 'ltr' }]}>
+                      {t("home.createFirst")}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -512,20 +720,27 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       {/* Floating Header */}
-      <Animated.View style={[styles.header, { opacity: headerOpacity, top: insets.top + 10 }]} pointerEvents="box-none">
-        <View style={styles.headerRow} pointerEvents="auto">
+      <Animated.View
+        style={[
+          styles.header,
+          { opacity: headerOpacity, top: insets.top + 10 },
+        ]}
+        pointerEvents="box-none"
+      >
+        <View style={[styles.headerRow, isRTL && styles.headerRowRTL]} pointerEvents="auto">
           <Pressable
             style={({ pressed }) => [
               styles.headerButton,
+              { backgroundColor: isDark ? colors.gray[200] : colors.gray[100] },
               pressed && styles.headerButtonPressed,
             ]}
-            onPress={() => router.push('/(tabs)/notifications')}
+            onPress={() => router.push("/(tabs)/notifications")}
           >
-            <Feather name="bell" size={22} color={Colors.gray[700]} />
+            <Feather name="bell" size={22} color={isDark ? colors.gray[700] : colors.gray[700]} />
             {unreadCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationBadgeText}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </Text>
               </View>
             )}
@@ -533,12 +748,12 @@ export default function HomeScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.headerButton,
-              styles.createButton,
+              { backgroundColor: isDark ? `${colors.primary}30` : `${colors.primary}15` },
               pressed && styles.headerButtonPressed,
             ]}
-            onPress={() => router.push('/modals/create-event')}
+            onPress={() => router.push("/modals/create-event")}
           >
-            <Feather name="plus" size={22} color={Colors.primary} />
+            <Feather name="plus" size={22} color={colors.primary} />
           </Pressable>
         </View>
       </Animated.View>
@@ -556,38 +771,40 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7fafc',
+    backgroundColor: "#f7fafc",
   },
   statusBarBg: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#f7fafc',
+    backgroundColor: "#f7fafc",
     zIndex: 5,
   },
   header: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     paddingHorizontal: 20,
-    paddingBottom: 16,
     zIndex: 10,
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerRowRTL: {
+    flexDirection: "row-reverse",
   },
   headerButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
     backgroundColor: Colors.gray[100],
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
   },
   headerButtonPressed: {
     opacity: 0.7,
@@ -596,21 +813,21 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.primary}15`,
   },
   notificationBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -4,
     right: -4,
     backgroundColor: Colors.primary,
     borderRadius: 10,
     minWidth: 18,
     height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 4,
   },
   notificationBadgeText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   scrollView: {
     flex: 1,
@@ -622,19 +839,43 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    marginBottom: 18,
     paddingHorizontal: 16,
   },
-  eventsContainer: {
-    gap: 12,
+  sectionHeaderLeft: {
+    flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: Colors.black,
+    letterSpacing: -0.5,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontWeight: "300",
+    color: Colors.gray[400],
+    marginTop: 2,
+    letterSpacing: 0.2,
+  },
+  textRTL: {
+    textAlign: "right",
+  },
+  viewAllButton: {
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: Colors.primary,
   },
   eventCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -661,147 +902,107 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  // Modern Invitation Card Styles
+  // Invitation Card Styles (Horizontal Scroll)
   invitationsSection: {
-    marginBottom: 28,
+    marginBottom: 36,
   },
   invitationsScrollContent: {
     paddingLeft: 16,
+    paddingRight: 4,
   },
-  invitationCard: {
-    width: INVITATION_CARD_WIDTH,
-    height: 180,
-    marginRight: 16,
+  invitationCardNew: {
+    width: INVITATION_CARD_WIDTH_NEW,
+    height: 240,
     borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    marginRight: 12,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
-    shadowRadius: 16,
+    shadowRadius: 12,
     elevation: 8,
   },
-  invitationCardFirst: {
-    marginLeft: 0,
-  },
-  invitationGradient: {
+  invitationCardTop: {
     flex: 1,
-    padding: 18,
-    justifyContent: 'space-between',
-    position: 'relative',
+    padding: 20,
+    justifyContent: "flex-end",
+    position: "relative",
+    backgroundColor: Colors.primary,
+    overflow: "hidden",
   },
-  invitationDecorCircle1: {
-    position: 'absolute',
-    top: -30,
-    right: -30,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  invitationCardOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
   },
-  invitationDecorCircle2: {
-    position: 'absolute',
-    bottom: -20,
-    left: -20,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+  invitationIconBg: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    opacity: 0.4,
   },
-  invitationTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  invitationTypePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+  invitationCardTopContent: {
     gap: 6,
   },
-  invitationTypeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  invitationDaysBadge: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  invitationDaysNumber: {
+  invitationCardTitle: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
-    lineHeight: 22,
-  },
-  invitationDaysLabel: {
-    fontSize: 9,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.85)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  invitationDaysText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  invitationMiddle: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  invitationTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     lineHeight: 26,
   },
-  invitationBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  invitationMetaText: {
+    fontSize: 13,
+    fontWeight: "400",
+    color: "rgba(255,255,255,0.8)",
   },
-  invitationHostRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  invitationCardBottom: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  invitationCardBottomRTL: {
+    flexDirection: "row-reverse",
+  },
+  rsvpBtnAccept: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#22C55E",
+    paddingVertical: 12,
+    borderRadius: 12,
     gap: 6,
   },
-  invitationHostText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.9)',
+  rsvpBtnRTL: {
+    flexDirection: "row-reverse",
   },
-  invitationDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  rsvpBtnAcceptText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  rsvpBtnDecline: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.gray[100],
+    paddingVertical: 12,
+    borderRadius: 12,
     gap: 6,
   },
-  invitationDateText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.9)',
-  },
-  invitationTapHint: {
-    position: 'absolute',
-    bottom: 8,
-    right: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  invitationTapText: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.5)',
+  rsvpBtnDeclineText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.gray[600],
   },
   // Modern Date Cards Styles
   datesSection: {
-    marginBottom: 28,
+    marginBottom: 36,
   },
   datesScrollContent: {
     paddingLeft: 16,
@@ -811,8 +1012,8 @@ const styles = StyleSheet.create({
     height: 140,
     marginRight: 16,
     borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
@@ -824,176 +1025,199 @@ const styles = StyleSheet.create({
   dateCardGradient: {
     flex: 1,
     padding: 18,
-    position: 'relative',
-    justifyContent: 'space-between',
+    position: "relative",
+    justifyContent: "space-between",
+  },
+  dateCardOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 0,
+  },
+  dateCardBgIcon: {
+    position: "absolute",
+    top: 12,
+    right: 12,
   },
   dateCardContent: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
+    zIndex: 1,
   },
   dateTypeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.25)",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
     gap: 5,
   },
+  dateTypeBadgeRTL: {
+    flexDirection: "row-reverse",
+    alignSelf: "flex-end",
+  },
   dateTypeText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
   },
   dateCardTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     lineHeight: 24,
     marginVertical: 8,
   },
   dateBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  dateBottomRowRTL: {
+    flexDirection: "row-reverse",
   },
   dateDateInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
   },
+  dateDateInfoRTL: {
+    flexDirection: "row-reverse",
+  },
   dateCountdownBadge: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: "rgba(255,255,255,0.3)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minWidth: 60,
   },
   dateDecorDot1: {
-    position: 'absolute',
+    position: "absolute",
     top: 12,
     right: 40,
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: "rgba(255,255,255,0.4)",
   },
   dateDecorDot2: {
-    position: 'absolute',
+    position: "absolute",
     top: 28,
     right: 20,
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: "rgba(255,255,255,0.3)",
   },
   dateDecorDot3: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 30,
     right: 50,
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: "rgba(255,255,255,0.25)",
   },
   dateDecorDot4: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 15,
     right: 25,
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: "rgba(255,255,255,0.35)",
   },
   dateCardInner: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   dateCountdownCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
     borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: "rgba(255,255,255,0.5)",
   },
   dateCountdownNumber: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     lineHeight: 20,
   },
   dateCountdownLabel: {
     fontSize: 8,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
-    textTransform: 'uppercase',
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.9)",
+    textTransform: "uppercase",
     letterSpacing: 0.3,
     marginTop: -1,
   },
   dateCountdownToday: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#fff',
-    textTransform: 'uppercase',
+    fontWeight: "800",
+    color: "#fff",
+    textTransform: "uppercase",
   },
   dateCountdownTomorrow: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   dateDetailsContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   dateTypePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.25)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     gap: 4,
     marginBottom: 8,
   },
   dateTypePillText: {
     fontSize: 10,
-    fontWeight: '600',
-    color: '#fff',
-    textTransform: 'uppercase',
+    fontWeight: "600",
+    color: "#fff",
+    textTransform: "uppercase",
     letterSpacing: 0.3,
   },
   dateTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginBottom: 6,
     lineHeight: 20,
   },
   dateDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
   },
   dateDateText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.9)',
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.9)",
   },
   // Empty dates state
   emptyDatesWrapper: {
-    marginHorizontal: 0,
+    marginHorizontal: 16,
     borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
@@ -1001,8 +1225,8 @@ const styles = StyleSheet.create({
   },
   emptyDatesGradient: {
     padding: 28,
-    alignItems: 'center',
-    position: 'relative',
+    alignItems: "center",
+    position: "relative",
   },
   emptyIllustration: {
     width: 100,
@@ -1010,7 +1234,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardBgIllustration: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -10,
     right: -10,
     width: 100,
@@ -1021,35 +1245,35 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 14,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: "rgba(255,255,255,0.4)",
   },
   emptyDatesTitle: {
     fontSize: 17,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginBottom: 6,
   },
   emptyDatesSubtitle: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.9)',
-    textAlign: 'center',
+    color: "rgba(255,255,255,0.9)",
+    textAlign: "center",
     marginBottom: 18,
     lineHeight: 18,
   },
   emptyDatesButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 14,
     gap: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1057,15 +1281,15 @@ const styles = StyleSheet.create({
   },
   emptyDatesButtonText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.primary,
   },
   emptySection: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 32,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1074,7 +1298,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyActionButton: {
     paddingHorizontal: 20,
@@ -1087,139 +1311,144 @@ const styles = StyleSheet.create({
   },
   // Image Event Card Styles
   eventsSection: {
-    marginBottom: 28,
+    marginBottom: 36,
   },
   eventsScrollContent: {
     paddingLeft: 16,
+    paddingRight: 4,
   },
   eventImageCard: {
     width: EVENT_CARD_WIDTH,
-    height: 200,
+    height: 352,
     borderRadius: 20,
-    marginRight: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    marginRight: 12,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
-    elevation: 6,
-  },
-  eventImageCardFirst: {
-    marginLeft: 0,
+    elevation: 8,
   },
   eventCardGradient: {
     flex: 1,
-    borderRadius: 20,
-  },
-  eventCardImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
+    position: "relative",
   },
   eventCardOverlay: {
-    position: 'absolute',
-    top: 0,
+    position: "absolute",
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    height: 150,
   },
-  eventCardContentWrapper: {
-    flex: 1,
+  eventCardBgIcon: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+  },
+  eventCardContent: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 16,
-    justifyContent: 'space-between',
+    gap: 8,
   },
   eventCardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    position: "absolute",
+    top: 16,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    zIndex: 10,
   },
   eventCardTypeBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: "transparent",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.7)",
   },
   eventCardTypeText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontWeight: "600",
+    color: "#fff",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   eventCardCountdown: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 50,
+    backgroundColor: "transparent",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    alignItems: "center",
+    minWidth: 54,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.7)",
   },
   eventCardCountdownToday: {
-    backgroundColor: Colors.primary,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderColor: "#fff",
   },
   eventCardCountdownNumber: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: "800",
+    color: "#fff",
     lineHeight: 22,
   },
   eventCardCountdownLabel: {
     fontSize: 8,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.9)",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   eventCardCountdownText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   eventCardCountdownTodayText: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#fff',
-    textTransform: 'uppercase',
-  },
-  eventCardBottom: {
-    gap: 8,
+    fontWeight: "800",
+    color: "#fff",
+    textTransform: "uppercase",
   },
   eventCardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-    lineHeight: 24,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
+    lineHeight: 20,
   },
   eventCardMeta: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    flexDirection: "column",
+    gap: 4,
   },
   eventCardMetaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  eventCardMetaItemRTL: {
+    flexDirection: "row-reverse",
   },
   eventCardMetaText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.85)',
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.9)",
   },
   // Empty Events State
   emptyEventsWrapper: {
-    marginHorizontal: 0,
+    marginHorizontal: 16,
   },
   emptyEventsCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 20,
     padding: 32,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -1232,26 +1461,26 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     backgroundColor: `${Colors.primary}10`,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
   },
   emptyEventsTitle: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.black,
     marginBottom: 8,
   },
   emptyEventsSubtitle: {
     fontSize: 14,
     color: Colors.gray[500],
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 20,
     lineHeight: 20,
   },
   emptyEventsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 14,
@@ -1265,26 +1494,26 @@ const styles = StyleSheet.create({
   },
   emptyEventsButtonText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#ffffff',
+    fontWeight: "600",
+    color: "#ffffff",
   },
   // Decorative circles for date cards
   stackDecorCircle1: {
-    position: 'absolute',
+    position: "absolute",
     top: -30,
     right: -30,
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   stackDecorCircle2: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -20,
     left: -20,
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
 });

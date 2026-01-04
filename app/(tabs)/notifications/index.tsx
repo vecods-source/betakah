@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useAppDispatch, useAppSelector, useLocalization } from '../../../src/hooks';
+import { useAppDispatch, useAppSelector, useLocalization, useTheme } from '../../../src/hooks';
 import { fetchNotifications, markAsRead } from '../../../src/store/slices/notificationsSlice';
 import { Colors } from '../../../src/constants/colors';
 import { Notification } from '../../../src/types';
@@ -9,6 +9,7 @@ export default function NotificationsListScreen() {
   const dispatch = useAppDispatch();
   const { notifications, isLoading } = useAppSelector((state) => state.notifications);
   const { isArabic } = useLocalization();
+  const { isDark, colors, cardBackground, screenBackground, textPrimary, textSecondary, borderColor } = useTheme();
 
   useEffect(() => {
     dispatch(fetchNotifications());
@@ -21,22 +22,26 @@ export default function NotificationsListScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={[styles.title, isArabic && styles.textRTL]}>{isArabic ? 'الإشعارات' : 'Notifications'}</Text>
+    <View style={[styles.container, { backgroundColor: screenBackground }]}>
+      <View style={[styles.header, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}>
+        <Text style={[styles.title, { color: textPrimary }, isArabic && styles.textRTL]}>{isArabic ? 'الإشعارات' : 'Notifications'}</Text>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         {notifications.map((notification: Notification) => (
           <TouchableOpacity
             key={notification.id}
-            style={[styles.notificationCard, !notification.isRead && styles.notificationUnread]}
+            style={[
+              styles.notificationCard,
+              { backgroundColor: cardBackground },
+              !notification.isRead && { backgroundColor: isDark ? `${colors.primary}15` : 'rgba(120, 16, 74, 0.05)' }
+            ]}
             onPress={() => handleNotificationPress(notification)}
           >
             <View style={styles.notificationContent}>
-              <Text style={styles.notificationTitle}>{notification.title}</Text>
-              {notification.body && <Text style={styles.notificationBody}>{notification.body}</Text>}
-              <Text style={styles.notificationTime}>
+              <Text style={[styles.notificationTitle, { color: textPrimary }]}>{notification.title}</Text>
+              {notification.body && <Text style={[styles.notificationBody, { color: textSecondary }]}>{notification.body}</Text>}
+              <Text style={[styles.notificationTime, { color: isDark ? colors.gray[500] : colors.gray[400] }]}>
                 {new Date(notification.createdAt).toLocaleDateString()}
               </Text>
             </View>
@@ -46,7 +51,7 @@ export default function NotificationsListScreen() {
         {!isLoading && notifications.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🔔</Text>
-            <Text style={styles.emptyText}>{isArabic ? 'لا توجد إشعارات' : 'No notifications yet'}</Text>
+            <Text style={[styles.emptyText, { color: textSecondary }]}>{isArabic ? 'لا توجد إشعارات' : 'No notifications yet'}</Text>
           </View>
         )}
       </ScrollView>

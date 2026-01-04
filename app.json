@@ -28,7 +28,8 @@
         "NSMicrophoneUsageDescription": "Betakah needs microphone access for video recording",
         "NSFaceIDUsageDescription": "Use Face ID to securely access your account",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "2"
     },
     "android": {
       "package": "qa.betakah.app",
@@ -73,7 +74,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Betakah needs camera access to scan your ID"
+          "cameraPermission": "Betakah needs camera access to scan your ID",
+          "microphonePermission": "Betakah needs microphone access for video recording",
+          "recordAudioAndroid": true
         }
       ],
       [
@@ -108,15 +111,15 @@
         }
       ],
       [
-        "expo-av",
-        {
-          "microphonePermission": "Betakah needs microphone access for video recording"
-        }
-      ],
-      [
         "expo-local-authentication",
         {
           "faceIDPermission": "Use Face ID to securely access your account"
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false
         }
       ]
     ],

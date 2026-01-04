@@ -122,8 +122,11 @@
       "evening": "مساء الخير"
     },
     "upcomingEvents": "المناسبات القادمة",
+    "upcomingEventsSubtitle": "مناسباتك التي تستضيفها",
     "pendingInvitations": "دعوات في انتظار الرد",
+    "pendingInvitationsSubtitle": "في انتظار ردك",
     "upcomingDates": "تواريخ مهمة",
+    "upcomingDatesSubtitle": "أعياد الميلاد والذكرى السنوية والمزيد",
     "noEvents": "لا توجد مناسبات قادمة",
     "noDates": "لا توجد تواريخ قادمة",
     "createFirst": "أنشئ مناسبتك الأولى",
@@ -139,7 +142,9 @@
     "swipeToSee": "اسحب لرؤية المزيد",
     "fromHost": "من {{name}}",
     "createEvent": "إنشاء مناسبة",
-    "createEventSubtitle": "ابدأ التخطيط لمناسبتك القادمة"
+    "createEventSubtitle": "ابدأ التخطيط لمناسبتك القادمة",
+    "accept": "قبول",
+    "decline": "اعتذار"
   },
   "dates": {
     "birthday": "عيد ميلاد",
@@ -303,11 +308,14 @@
   },
   "notifications": {
     "title": "الإشعارات",
-    "empty": {
-      "title": "لا توجد إشعارات",
-      "message": "لا توجد إشعارات جديدة"
-    },
-    "markAllRead": "تحديد الكل كمقروء",
+    "empty": "لا توجد إشعارات",
+    "emptyDescription": "لا توجد إشعارات جديدة. عندما تتلقى إشعارات جديدة، ستظهر هنا.",
+    "markAllRead": "قراءة الكل",
+    "justNow": "الآن",
+    "minutesAgo": "منذ {{count}} دقيقة",
+    "hoursAgo": "منذ {{count}} ساعة",
+    "yesterday": "أمس",
+    "daysAgo": "منذ {{count}} يوم",
     "types": {
       "invitation": "دعوة جديدة",
       "rsvp": "تحديث الرد",
