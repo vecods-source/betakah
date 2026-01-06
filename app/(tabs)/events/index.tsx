@@ -166,7 +166,7 @@ export default function EventsListScreen() {
       <TouchableOpacity
         key={event.id}
         style={styles.eventCard}
-        onPress={() => router.push({ pathname: '/(tabs)/events/[id]', params: { id: event.id } })}
+        onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
         activeOpacity={0.9}
       >
         {imageSource ? (

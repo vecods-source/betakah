@@ -58,8 +58,6 @@ const getEventIcon = (type: EventType) => {
       return { name: 'moon-outline', family: 'ionicons' };
     case 'PRIVATE_PARTY':
       return { name: 'party-popper', family: 'material' };
-    case 'CONDOLENCE':
-      return { name: 'flower-outline', family: 'ionicons' };
     default:
       return { name: 'calendar', family: 'feather' };
   }
@@ -142,8 +140,6 @@ export function InvitationCard({
   const description = isArabic ? (event.descriptionAr || event.description) : (event.description || event.descriptionAr);
   const hostName = event.host ? `${event.host.firstName} ${event.host.lastName}` : '';
 
-  const isCondolence = template.isCondolence || event.type === 'CONDOLENCE';
-
   // Get card style specific classes
   const getCardBorderRadius = () => {
     switch (cardStyle) {
@@ -191,9 +187,7 @@ export function InvitationCard({
           cardStyle === 'modern' && styles.modernInvitationText,
           cardStyle === 'somber' && styles.somberInvitationText,
         ]}>
-          {isCondolence
-            ? (isArabic ? 'دعوة للعزاء' : 'Condolence Invitation')
-            : (isArabic ? 'أنتم مدعوون' : "You're Invited")}
+          {isArabic ? 'أنتم مدعوون' : "You're Invited"}
         </Text>
 
         {/* Event Title */}
@@ -319,9 +313,7 @@ export function InvitationCard({
               >
                 <Feather name="check" size={18} color="#fff" />
                 <Text style={[styles.rsvpButtonText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-                  {isCondolence
-                    ? (isArabic ? 'سأحضر' : "I'll Attend")
-                    : (isArabic ? 'بكل سرور' : 'Accept')}
+                  {isArabic ? 'بكل سرور' : 'Accept'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity

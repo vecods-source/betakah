@@ -1,30 +1,26 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useTheme, useLocalization } from '../../hooks';
+import { Colors } from '../../constants/colors';
 
-interface UIInputProps {
+type InputVariant = 'default' | 'underline';
+
+interface UIInputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
   placeholder?: string;
   value: string;
   onChangeText: (text: string) => void;
-  icon?: string;
+  icon?: keyof typeof Feather.glyphMap;
   multiline?: boolean;
   numberOfLines?: number;
   keyboardType?: 'default' | 'phone-pad' | 'email-address' | 'numeric';
   secureTextEntry?: boolean;
   disabled?: boolean;
-  textAlign?: 'left' | 'right';
   required?: boolean;
+  variant?: InputVariant;
+  maxLength?: number;
 }
-
-const iconMap: Record<string, string> = {
-  'mappin.circle.fill': 'map-marker',
-  'calendar': 'calendar',
-  'clock.fill': 'clock',
-  'envelope.fill': 'email',
-  'lock.fill': 'lock',
-  'person.fill': 'account',
-};
 
 export function UIInput({
   label,
@@ -37,37 +33,45 @@ export function UIInput({
   keyboardType = 'default',
   secureTextEntry = false,
   disabled = false,
-  textAlign = 'left',
   required = false,
+  variant = 'underline',
+  maxLength,
+  ...rest
 }: UIInputProps) {
-  const mappedIcon = icon ? iconMap[icon] || 'circle' : null;
+  const { cardBackground, textPrimary, textSecondary, colors, isDark } = useTheme();
+  const { isArabic } = useLocalization();
+
+  const isUnderline = variant === 'underline';
 
   return (
     <View style={styles.container}>
       {label && (
         <View style={styles.labelContainer}>
-          {mappedIcon && (
-            <MaterialCommunityIcons
-              name={mappedIcon as any}
+          {icon && (
+            <Feather
+              name={icon}
               size={16}
-              color="#2c5282"
+              color={Colors.primary}
               style={styles.labelIcon}
             />
           )}
-          <Text style={styles.label}>
+          <Text style={[styles.label, { color: textSecondary, textAlign: isArabic ? 'right' : 'left' }]}>
             {label}{required ? ' *' : ''}
           </Text>
         </View>
       )}
       <TextInput
         style={[
-          styles.input,
-          multiline && { minHeight: 80, paddingTop: 14 },
-          disabled && styles.disabledInput,
-          { textAlign },
+          isUnderline ? styles.underlineInput : styles.defaultInput,
+          isUnderline
+            ? { borderBottomColor: isDark ? colors.gray[600] : Colors.gray[300] }
+            : { backgroundColor: cardBackground, borderColor: isDark ? colors.gray[600] : '#e2e8f0' },
+          { color: textPrimary, textAlign: isArabic ? 'right' : 'left' },
+          multiline && { minHeight: 80, textAlignVertical: 'top' },
+          disabled && [styles.disabledInput, { backgroundColor: isDark ? colors.gray[800] : '#edf2f7' }],
         ]}
         placeholder={placeholder}
-        placeholderTextColor="#a0aec0"
+        placeholderTextColor={colors.gray[400]}
         value={value}
         onChangeText={onChangeText}
         multiline={multiline}
@@ -76,6 +80,8 @@ export function UIInput({
         secureTextEntry={secureTextEntry}
         editable={!disabled}
         textAlignVertical={multiline ? 'top' : 'center'}
+        maxLength={maxLength}
+        {...rest}
       />
     </View>
   );
@@ -83,33 +89,36 @@ export function UIInput({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
   labelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   labelIcon: {
     marginRight: 8,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    color: '#4a5568',
   },
-  input: {
-    backgroundColor: '#ffffff',
+  // Underline variant (new default)
+  underlineInput: {
+    borderBottomWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+    fontSize: 17,
+  },
+  // Default variant (bordered)
+  defaultInput: {
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#1a202c',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
   },
   disabledInput: {
-    backgroundColor: '#edf2f7',
-    color: '#718096',
+    opacity: 0.6,
   },
 });

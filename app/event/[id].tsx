@@ -22,9 +22,9 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
-import { useAppSelector, useTheme } from '../../../src/hooks';
-import { Colors } from '../../../src/constants/colors';
-import { Event } from '../../../src/types';
+import { useAppSelector, useTheme } from '../../src/hooks';
+import { Colors } from '../../src/constants/colors';
+import { Event } from '../../src/types';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const COVER_HEIGHT = SCREEN_HEIGHT * 0.52;
@@ -80,7 +80,6 @@ export default function EventDetailsScreen() {
       GRADUATION: { icon: 'school', label: 'Graduation', labelAr: 'تخرج', color: '#4CAF50' },
       BABY_SHOWER: { icon: 'baby-carriage', label: 'Baby Shower', labelAr: 'استقبال مولود', color: '#E91E63' },
       ENGAGEMENT: { icon: 'heart-multiple', label: 'Engagement', labelAr: 'خطوبة', color: '#E91E63' },
-      CONDOLENCE: { icon: 'candle', label: 'Condolence', labelAr: 'عزاء', color: '#607D8B' },
       EID_GATHERING: { icon: 'moon-waning-crescent', label: 'Eid Gathering', labelAr: 'تجمع العيد', color: '#009688' },
       PRIVATE_PARTY: { icon: 'party-popper', label: 'Party', labelAr: 'حفلة', color: '#9C27B0' },
     };
@@ -125,10 +124,10 @@ export default function EventDetailsScreen() {
   const countdown = getCountdownText(daysUntil);
 
   const quickActions = [
-    { icon: 'play-circle', label: isArabic ? 'القصص' : 'Stories', color: '#E91E63', onPress: () => router.push({ pathname: '/(tabs)/events/stories/[eventId]', params: { eventId: id } }) },
-    { icon: 'image', label: isArabic ? 'الصور' : 'Gallery', color: Colors.primary, onPress: () => router.push({ pathname: '/(tabs)/events/media/[eventId]', params: { eventId: id } }) },
+    { icon: 'play-circle', label: isArabic ? 'القصص' : 'Stories', color: '#E91E63', onPress: () => router.push({ pathname: '/event/stories/[eventId]', params: { eventId: id } }) },
+    { icon: 'image', label: isArabic ? 'الصور' : 'Gallery', color: Colors.primary, onPress: () => router.push({ pathname: '/event/media/[eventId]', params: { eventId: id } }) },
     { icon: 'camera', label: isArabic ? 'كاميرا' : 'Camera', color: '#FF9800', onPress: () => router.push({ pathname: '/event/camera/[eventId]', params: { eventId: id } }) },
-    { icon: 'users', label: isArabic ? 'الضيوف' : 'Guests', color: '#8B5CF6', onPress: () => {} },
+    { icon: 'users', label: isArabic ? 'الضيوف' : 'Guests', color: '#8B5CF6', onPress: () => router.push({ pathname: '/event/guests/[eventId]', params: { eventId: id } }) },
   ];
 
   const CoverContent = () => (
@@ -151,9 +150,19 @@ export default function EventDetailsScreen() {
       {/* Cover Content */}
       <View style={styles.coverContent}>
         {/* Countdown Badge */}
-        <View style={[styles.countdownBadge, daysUntil <= 1 && daysUntil >= 0 && styles.countdownBadgeUrgent]}>
-          <Text style={styles.countdownMain}>{countdown.main}</Text>
-          {countdown.sub ? <Text style={styles.countdownSub}>{countdown.sub}</Text> : null}
+        <View style={[
+          styles.countdownBadge,
+          isArabic ? styles.countdownBadgeRTL : styles.countdownBadgeLTR,
+          daysUntil <= 1 && daysUntil >= 0 && styles.countdownBadgeUrgent,
+        ]}>
+          <Text style={[styles.countdownMain, daysUntil <= 1 && daysUntil >= 0 && styles.countdownMainUrgent]}>
+            {countdown.main}
+          </Text>
+          {countdown.sub ? (
+            <Text style={[styles.countdownSub, daysUntil <= 1 && daysUntil >= 0 && styles.countdownSubUrgent]}>
+              {countdown.sub}
+            </Text>
+          ) : null}
         </View>
 
         {/* Type Badge */}
@@ -216,7 +225,7 @@ export default function EventDetailsScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Cover Section */}
         <Animated.View style={[styles.coverContainer, coverAnimatedStyle]}>
@@ -352,16 +361,6 @@ export default function EventDetailsScreen() {
           )}
         </View>
       </Animated.ScrollView>
-
-      {/* Bottom Action Bar */}
-      <View style={[styles.bottomBar, { backgroundColor: cardBackground, paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <TouchableOpacity style={[styles.primaryButton, { backgroundColor: Colors.primary }]} activeOpacity={0.8}>
-          <Feather name="share" size={18} color="#fff" />
-          <Text style={[styles.primaryButtonText, { writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
-            {isArabic ? 'مشاركة الدعوة' : 'Share Invitation'}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -455,7 +454,6 @@ const styles = StyleSheet.create({
   countdownBadge: {
     position: 'absolute',
     top: -60,
-    right: 20,
     backgroundColor: 'rgba(255,255,255,0.95)',
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -467,6 +465,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
+  countdownBadgeLTR: {
+    right: 20,
+  },
+  countdownBadgeRTL: {
+    left: 20,
+  },
   countdownBadgeUrgent: {
     backgroundColor: Colors.primary,
   },
@@ -475,11 +479,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.primary,
   },
+  countdownMainUrgent: {
+    color: '#fff',
+  },
   countdownSub: {
     fontSize: 12,
     fontWeight: '600',
     color: Colors.primary,
     marginTop: -2,
+  },
+  countdownSubUrgent: {
+    color: '#fff',
   },
   typeBadge: {
     flexDirection: 'row',
@@ -642,30 +652,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginTop: 8,
-  },
-  // Bottom Bar
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-  },
-  primaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 10,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
   },
   // Empty State
   emptyHeader: {

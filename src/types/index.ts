@@ -45,7 +45,6 @@ export type EventType =
   | 'BABY_SHOWER'
   | 'EID_GATHERING'
   | 'PRIVATE_PARTY'
-  | 'CONDOLENCE'
   | 'OTHER';
 
 export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'COMPLETED';

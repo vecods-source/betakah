@@ -98,7 +98,7 @@ export default function ProfileScreen() {
         <Text style={[styles.userName, { color: textPrimary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>
           {user?.firstName} {user?.lastName}
         </Text>
-        <Text style={[styles.userPhone, { color: textSecondary, writingDirection: isArabic ? 'rtl' : 'ltr' }]}>{user?.phoneNumber || '+974 XXXX XXXX'}</Text>
+        <Text style={[styles.userPhone, { color: textSecondary, writingDirection: 'ltr' }]}>{user?.phoneNumber || '+974 XXXX XXXX'}</Text>
       </View>
 
       {/* Menu Items */}

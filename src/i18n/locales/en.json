@@ -1,4 +1,10 @@
 {
+  "tabs": {
+    "home": "Home",
+    "events": "Events",
+    "invitations": "Invitations",
+    "profile": "Profile"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

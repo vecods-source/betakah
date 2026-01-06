@@ -418,90 +418,6 @@ export const babyShowerTemplates: InvitationTemplate[] = [
   },
 ];
 
-// Condolence Templates (Ta'ziya) - Somber themes
-export const condolenceTemplates: InvitationTemplate[] = [
-  {
-    id: 'condolence-classic',
-    name: 'Classic Condolence',
-    nameAr: 'عزاء كلاسيكي',
-    eventTypes: ['CONDOLENCE'],
-    colors: {
-      primary: '#2C3E50',
-      secondary: '#7F8C8D',
-      background: '#F4F4F4',
-      text: '#2C3E50',
-      accent: '#5D6D7E',
-    },
-    titleFontEn: 'cormorant',
-    bodyFontEn: 'lora',
-    titleFontAr: 'amiri',
-    bodyFontAr: 'amiri',
-    cardStyle: 'somber',
-    isCondolence: true,
-    previewImage: null,
-  },
-  {
-    id: 'condolence-peaceful',
-    name: 'Peaceful Rest',
-    nameAr: 'راحة أبدية',
-    eventTypes: ['CONDOLENCE'],
-    colors: {
-      primary: '#34495E',
-      secondary: '#95A5A6',
-      background: '#EAEDED',
-      text: '#2C3E50',
-      accent: '#7F8C8D',
-    },
-    titleFontEn: 'lora',
-    bodyFontEn: 'lora',
-    titleFontAr: 'almarai',
-    bodyFontAr: 'almarai',
-    cardStyle: 'somber',
-    isCondolence: true,
-    previewImage: null,
-  },
-  {
-    id: 'condolence-minimal',
-    name: 'Minimal Grace',
-    nameAr: 'بساطة وقار',
-    eventTypes: ['CONDOLENCE'],
-    colors: {
-      primary: '#1C2833',
-      secondary: '#566573',
-      background: '#FFFFFF',
-      text: '#1C2833',
-      accent: '#ABB2B9',
-    },
-    titleFontEn: 'lora',
-    bodyFontEn: 'lora',
-    titleFontAr: 'almarai',
-    bodyFontAr: 'almarai',
-    cardStyle: 'somber',
-    isCondolence: true,
-    previewImage: null,
-  },
-  {
-    id: 'condolence-traditional',
-    name: 'Traditional',
-    nameAr: 'تقليدي',
-    eventTypes: ['CONDOLENCE'],
-    colors: {
-      primary: '#1A5276',
-      secondary: '#2471A3',
-      background: '#EBF5FB',
-      text: '#154360',
-      accent: '#5499C7',
-    },
-    titleFontEn: 'cormorant',
-    bodyFontEn: 'lora',
-    titleFontAr: 'amiri',
-    bodyFontAr: 'amiri',
-    cardStyle: 'somber',
-    isCondolence: true,
-    previewImage: null,
-  },
-];
-
 // Get all templates
 export const allTemplates: InvitationTemplate[] = [
   ...weddingTemplates,
@@ -509,7 +425,6 @@ export const allTemplates: InvitationTemplate[] = [
   ...graduationTemplates,
   ...gatheringTemplates,
   ...babyShowerTemplates,
-  ...condolenceTemplates,
 ];
 
 // Get templates by event type

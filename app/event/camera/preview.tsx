@@ -8,14 +8,15 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Alert,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Sharing from 'expo-sharing';
 import { useLocalization, useTheme } from '../../../src/hooks';
 import { Colors } from '../../../src/constants/colors';
 
@@ -28,14 +29,15 @@ export default function MediaPreviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isArabic } = useLocalization();
-  const { cardBackground, textPrimary, textSecondary, colors } = useTheme();
 
   const [caption, setCaption] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [showCaptionInput, setShowCaptionInput] = useState(false);
 
   const isVideo = type === 'video';
 
-  // Video player for preview (only if it's a video)
+  // Video player for preview
   const player = useVideoPlayer(isVideo ? uri : null, (player) => {
     if (isVideo) {
       player.loop = true;
@@ -44,24 +46,24 @@ export default function MediaPreviewScreen() {
   });
 
   const handleShare = async () => {
+    Keyboard.dismiss();
     setIsUploading(true);
 
-    // Simulate upload delay
+    // Simulate upload
     setTimeout(() => {
       setIsUploading(false);
       Alert.alert(
-        isArabic ? 'تم المشاركة!' : 'Shared!',
+        isArabic ? 'تم!' : 'Sent!',
         isArabic
           ? 'تمت إضافة الوسائط إلى قصة المناسبة'
-          : 'Your media has been added to the event story',
+          : 'Added to event story',
         [
           {
             text: isArabic ? 'حسناً' : 'OK',
             onPress: () => {
-              // Navigate back to event media
               router.replace({
-                pathname: '/(tabs)/events/media/[eventId]',
-                params: { eventId },
+                pathname: '/event/[id]',
+                params: { id: eventId },
               });
             },
           },
@@ -71,20 +73,51 @@ export default function MediaPreviewScreen() {
   };
 
   const handleDiscard = () => {
-    Alert.alert(
-      isArabic ? 'تجاهل الوسائط؟' : 'Discard Media?',
-      isArabic
-        ? 'سيتم حذف هذه الوسائط ولا يمكن استردادها'
-        : 'This media will be deleted and cannot be recovered',
-      [
-        { text: isArabic ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        {
-          text: isArabic ? 'تجاهل' : 'Discard',
-          style: 'destructive',
-          onPress: () => router.back(),
-        },
-      ]
-    );
+    router.back();
+  };
+
+  const handleDownload = async () => {
+    try {
+      setIsDownloading(true);
+
+      // Check if sharing is available
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert(
+          isArabic ? 'غير متاح' : 'Not Available',
+          isArabic
+            ? 'المشاركة غير متاحة على هذا الجهاز'
+            : 'Sharing is not available on this device',
+        );
+        setIsDownloading(false);
+        return;
+      }
+
+      // Share the file (allows saving to gallery via share sheet)
+      if (uri) {
+        await Sharing.shareAsync(uri, {
+          mimeType: isVideo ? 'video/mp4' : 'image/jpeg',
+          dialogTitle: isArabic ? 'حفظ الملف' : 'Save File',
+        });
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      Alert.alert(
+        isArabic ? 'خطأ' : 'Error',
+        isArabic ? 'فشل حفظ الملف' : 'Failed to save file',
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleCaptionToggle = () => {
+    setShowCaptionInput(!showCaptionInput);
+    if (!showCaptionInput) {
+      // Focus will happen automatically
+    } else {
+      Keyboard.dismiss();
+    }
   };
 
   return (
@@ -92,99 +125,105 @@ export default function MediaPreviewScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.headerButton} onPress={handleDiscard}>
-          <Feather name="x" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {isArabic ? 'معاينة' : 'Preview'}
-        </Text>
-        <View style={styles.headerButton} />
-      </View>
-
-      {/* Media Preview */}
+      {/* Full Screen Media */}
       <View style={styles.mediaContainer}>
         {isVideo && player ? (
           <VideoView
             player={player}
             style={styles.media}
-            contentFit="contain"
-            nativeControls
+            contentFit="cover"
+            nativeControls={false}
           />
         ) : (
           <Image
             source={{ uri: uri || '' }}
             style={styles.media}
-            resizeMode="contain"
+            resizeMode="cover"
           />
         )}
       </View>
 
-      {/* Caption Input */}
-      <View style={[styles.captionContainer, { backgroundColor: cardBackground }]}>
-        <ScrollView
-          contentContainerStyle={styles.captionContent}
-          keyboardShouldPersistTaps="handled"
+      {/* Top Bar */}
+      <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={handleDiscard}
         >
+          <Ionicons name="close" size={30} color="#fff" />
+        </TouchableOpacity>
+
+        <View style={styles.topActions}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleDownload}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="download-outline" size={26} color="#fff" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleCaptionToggle}
+          >
+            <Ionicons name="text" size={26} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Caption Input Overlay */}
+      {showCaptionInput && (
+        <View style={styles.captionOverlay}>
           <TextInput
             style={[
               styles.captionInput,
-              { color: textPrimary, textAlign: isArabic ? 'right' : 'left' },
+              { textAlign: isArabic ? 'right' : 'left' },
             ]}
             placeholder={isArabic ? 'أضف تعليقاً...' : 'Add a caption...'}
-            placeholderTextColor={colors.gray[400]}
+            placeholderTextColor="rgba(255,255,255,0.6)"
             value={caption}
             onChangeText={setCaption}
             multiline
-            maxLength={200}
+            maxLength={150}
+            autoFocus
+            onBlur={() => !caption && setShowCaptionInput(false)}
           />
-
-          {/* Character count */}
-          <Text style={[styles.charCount, { color: textSecondary }]}>
-            {caption.length}/200
-          </Text>
-
-          {/* Info */}
-          <View style={styles.infoSection}>
-            <View style={styles.infoRow}>
-              <Feather name="eye" size={16} color={textSecondary} />
-              <Text style={[styles.infoText, { color: textSecondary }]}>
-                {isArabic
-                  ? 'سيتم عرض الوسائط في قسمك تلقائياً'
-                  : 'Media will be shown in your section automatically'}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Feather name="clock" size={16} color={textSecondary} />
-              <Text style={[styles.infoText, { color: textSecondary }]}>
-                {isArabic
-                  ? 'ستظهر في القصة حتى انتهاء المناسبة + 8 ساعات'
-                  : 'Will appear in story until event ends + 8 hours'}
-              </Text>
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Share Button */}
-        <View style={[styles.bottomActions, { paddingBottom: insets.bottom + 16 }]}>
-          <TouchableOpacity
-            style={[styles.shareButton, isUploading && styles.shareButtonDisabled]}
-            onPress={handleShare}
-            disabled={isUploading}
-          >
-            {isUploading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Feather name="send" size={20} color="#fff" />
-                <Text style={styles.shareButtonText}>
-                  {isArabic ? 'مشاركة في القصة' : 'Share to Story'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
+      )}
+
+      {/* Caption Display (when not editing) */}
+      {caption && !showCaptionInput && (
+        <TouchableOpacity
+          style={styles.captionDisplay}
+          onPress={handleCaptionToggle}
+        >
+          <Text style={[styles.captionText, { textAlign: isArabic ? 'right' : 'left' }]}>
+            {caption}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Bottom Actions */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 20 }]}>
+        {/* Send Button */}
+        <TouchableOpacity
+          style={[styles.sendButton, isUploading && styles.sendButtonDisabled]}
+          onPress={handleShare}
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.sendButtonText}>
+                {isArabic ? 'قصتي' : 'My Story'}
+              </Text>
+              <Ionicons name="send" size={18} color="#fff" />
+            </>
+          )}
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -195,85 +234,91 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  header: {
+  mediaContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  media: {
+    flex: 1,
+  },
+
+  // Top Bar
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 12,
   },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  iconButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
+  topActions: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  mediaContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  media: {
-    width: '100%',
-    height: '100%',
-  },
-  captionContainer: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '40%',
-  },
-  captionContent: {
-    padding: 20,
+
+  // Caption
+  captionOverlay: {
+    position: 'absolute',
+    top: '40%',
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 12,
+    padding: 16,
   },
   captionInput: {
+    fontSize: 18,
+    color: '#fff',
+    minHeight: 50,
+    lineHeight: 26,
+  },
+  captionDisplay: {
+    position: 'absolute',
+    bottom: 140,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 10,
+    padding: 12,
+  },
+  captionText: {
     fontSize: 16,
-    lineHeight: 24,
-    minHeight: 60,
+    color: '#fff',
+    lineHeight: 22,
   },
-  charCount: {
-    fontSize: 12,
-    textAlign: 'right',
-    marginTop: 8,
-  },
-  infoSection: {
-    marginTop: 16,
-    gap: 12,
-  },
-  infoRow: {
+
+  // Bottom Bar
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: 10,
-  },
-  infoText: {
-    fontSize: 13,
-    flex: 1,
-  },
-  bottomActions: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
   },
-  shareButton: {
+  sendButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: Colors.primary,
-    paddingVertical: 16,
-    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 30,
     gap: 10,
   },
-  shareButtonDisabled: {
-    opacity: 0.7,
+  sendButtonDisabled: {
+    opacity: 0.6,
   },
-  shareButtonText: {
+  sendButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',

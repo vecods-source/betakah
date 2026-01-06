@@ -196,7 +196,7 @@ export default function HomeScreen() {
         style={styles.eventImageCard}
         onPress={() =>
           router.push({
-            pathname: "/(tabs)/events/[id]",
+            pathname: "/event/[id]",
             params: { id: item.id },
           })
         }
@@ -588,7 +588,7 @@ export default function HomeScreen() {
           <SectionHeader
             title={t("home.upcomingDates")}
             subtitle={t("home.upcomingDatesSubtitle")}
-            onViewAll={() => router.push("/(tabs)/profile")}
+            onViewAll={() => router.push("/(tabs)/profile/important-dates")}
             showViewAll={(upcomingDates || []).length > 0}
           />
           {(upcomingDates || []).length > 0 ? (
@@ -734,7 +734,7 @@ export default function HomeScreen() {
               { backgroundColor: isDark ? colors.gray[200] : colors.gray[100] },
               pressed && styles.headerButtonPressed,
             ]}
-            onPress={() => router.push("/(tabs)/notifications")}
+            onPress={() => router.push("/notifs")}
           >
             <Feather name="bell" size={22} color={isDark ? colors.gray[700] : colors.gray[700]} />
             {unreadCount > 0 && (
@@ -744,16 +744,6 @@ export default function HomeScreen() {
                 </Text>
               </View>
             )}
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.headerButton,
-              { backgroundColor: isDark ? `${colors.primary}30` : `${colors.primary}15` },
-              pressed && styles.headerButtonPressed,
-            ]}
-            onPress={() => router.push("/modals/create-event")}
-          >
-            <Feather name="plus" size={22} color={colors.primary} />
           </Pressable>
         </View>
       </Animated.View>
@@ -791,7 +781,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
   },
   headerRowRTL: {
@@ -808,9 +798,6 @@ const styles = StyleSheet.create({
   },
   headerButtonPressed: {
     opacity: 0.7,
-  },
-  createButton: {
-    backgroundColor: `${Colors.primary}15`,
   },
   notificationBadge: {
     position: "absolute",

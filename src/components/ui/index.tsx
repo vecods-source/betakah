@@ -19,3 +19,4 @@ export { UIBackButton } from './UIBackButton';
 export { UIEmptyState } from './UIEmptyState';
 export { UIIcon } from './UIIcon';
 export { UIInput } from './UIInput';
+export { DatePickerSheet } from './DatePickerSheet';

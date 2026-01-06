@@ -4,36 +4,26 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Pressable,
   Dimensions,
   Alert,
   Animated,
   Platform,
-  ScrollView,
+  PanResponder,
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalization } from '../../../src/hooks';
 import { Colors } from '../../../src/constants/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-const LONG_PRESS_DELAY = 300;
-
-// Lenses/Filters
-const LENSES = [
-  { id: 'none', name: 'Normal', nameAr: 'عادي', icon: 'circle-outline' },
-  { id: 'vivid', name: 'Vivid', nameAr: 'زاهي', icon: 'sunny-outline' },
-  { id: 'warm', name: 'Warm', nameAr: 'دافئ', icon: 'flame-outline' },
-  { id: 'cool', name: 'Cool', nameAr: 'بارد', icon: 'snow-outline' },
-  { id: 'bw', name: 'B&W', nameAr: 'أبيض وأسود', icon: 'contrast-outline' },
-  { id: 'vintage', name: 'Vintage', nameAr: 'كلاسيكي', icon: 'film-outline' },
-  { id: 'blur', name: 'Portrait', nameAr: 'بورتريه', icon: 'person-outline' },
-];
+const CAPTURE_SIZE = 80;
+const CAPTURE_OUTER_SIZE = CAPTURE_SIZE + 12;
+const LONG_PRESS_DELAY = 200;
+const MAX_VIDEO_DURATION = 60; // seconds
+const LOCK_THRESHOLD = -100; // How far up to slide to lock
 
 export default function CameraScreen() {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -44,53 +34,195 @@ export default function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [facing, setFacing] = useState<CameraType>('back');
   const [isRecording, setIsRecording] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [flash, setFlash] = useState<'off' | 'on' | 'auto'>('off');
-  const [selectedLens, setSelectedLens] = useState('none');
-  const [showLenses, setShowLenses] = useState(true);
+  const [flash, setFlash] = useState<'off' | 'on'>('off');
+
+  // Refs to track current state for PanResponder (avoids stale closures)
+  const isRecordingRef = useRef(false);
+  const isLockedRef = useRef(false);
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  // Animations
+  const captureScale = useRef(new Animated.Value(1)).current;
+  const innerScale = useRef(new Animated.Value(1)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const ringOpacity = useRef(new Animated.Value(1)).current;
+  const lockSlideY = useRef(new Animated.Value(0)).current;
+  const lockOpacity = useRef(new Animated.Value(0)).current;
+  const lockScale = useRef(new Animated.Value(1)).current;
+
   const recordingTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const didLongPress = useRef(false);
+  const progressAnimation = useRef<Animated.CompositeAnimation | null>(null);
+  const isSliding = useRef(false);
 
-  // Recording animation
+  // Keep refs in sync with state for PanResponder
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+
+  useEffect(() => {
+    isLockedRef.current = isLocked;
+  }, [isLocked]);
+
+  // Pan responder for capture button with lock gesture
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        // Press down - start recording detection
+        didLongPress.current = false;
+
+        // Press down animation
+        Animated.parallel([
+          Animated.spring(captureScale, {
+            toValue: 0.92,
+            useNativeDriver: true,
+            friction: 6,
+          }),
+          Animated.timing(ringOpacity, {
+            toValue: 0.7,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        // Long press detection for video
+        longPressTimer.current = setTimeout(() => {
+          didLongPress.current = true;
+          startVideoRecording();
+        }, LONG_PRESS_DELAY);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (isRecordingRef.current && !isLockedRef.current && gestureState.dy < 0) {
+          isSliding.current = true;
+          // Clamp the slide value (only allow upward movement, between LOCK_THRESHOLD and 0)
+          const slideValue = Math.max(gestureState.dy, LOCK_THRESHOLD);
+          lockSlideY.setValue(slideValue);
+
+          // Scale lock icon when close to threshold
+          const progress = Math.min(Math.abs(gestureState.dy) / Math.abs(LOCK_THRESHOLD), 1);
+          lockScale.setValue(1 + progress * 0.3);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        // Release animation
+        Animated.parallel([
+          Animated.spring(captureScale, {
+            toValue: 1,
+            useNativeDriver: true,
+            friction: 6,
+          }),
+          Animated.timing(ringOpacity, {
+            toValue: 1,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+
+        // Check if should lock
+        if (gestureState.dy < LOCK_THRESHOLD && isRecordingRef.current) {
+          // Lock the recording
+          setIsLocked(true);
+          isLockedRef.current = true;
+          isSliding.current = false;
+          Animated.parallel([
+            Animated.spring(lockSlideY, {
+              toValue: LOCK_THRESHOLD,
+              useNativeDriver: true,
+            }),
+            Animated.timing(lockOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        } else if (isRecordingRef.current && !isLockedRef.current) {
+          // Stop recording if not locked
+          isSliding.current = false;
+          stopVideoRecording();
+          // Reset position
+          Animated.spring(lockSlideY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+          lockScale.setValue(1);
+        } else if (!didLongPress.current && !isRecordingRef.current) {
+          // Take photo on tap
+          takePhoto();
+        }
+      },
+    })
+  ).current;
+
   useEffect(() => {
     if (isRecording) {
-      // Progress ring animation
-      Animated.timing(progressAnim, {
+      // Show lock icon
+      Animated.timing(lockOpacity, {
         toValue: 1,
-        duration: 60000, // 60 seconds max
-        useNativeDriver: false,
+        duration: 200,
+        useNativeDriver: true,
       }).start();
 
-      // Pulse animation
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.15,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
+      // Animate inner circle to small square
+      Animated.spring(innerScale, {
+        toValue: 0.5,
+        useNativeDriver: true,
+        friction: 6,
+      }).start();
 
+      // Start progress ring animation
+      progressAnimation.current = Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: MAX_VIDEO_DURATION * 1000,
+        useNativeDriver: false,
+      });
+      progressAnimation.current.start();
+
+      // Recording timer
       recordingTimer.current = setInterval(() => {
-        setRecordingDuration((prev) => prev + 1);
+        setRecordingDuration((prev) => {
+          if (prev >= MAX_VIDEO_DURATION - 1) {
+            stopVideoRecording();
+            return prev;
+          }
+          return prev + 1;
+        });
       }, 1000);
     } else {
-      pulseAnim.setValue(1);
+      // Hide lock icon
+      Animated.timing(lockOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+
+      // Reset animations
+      Animated.spring(innerScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 6,
+      }).start();
+
       progressAnim.setValue(0);
+      lockSlideY.setValue(0);
+      lockScale.setValue(1);
+      setIsLocked(false);
+
+      if (progressAnimation.current) {
+        progressAnimation.current.stop();
+      }
+
       if (recordingTimer.current) {
         clearInterval(recordingTimer.current);
         recordingTimer.current = null;
@@ -126,53 +258,8 @@ export default function CameraScreen() {
     setFacing((current) => (current === 'back' ? 'front' : 'back'));
   };
 
-  const cycleFlash = () => {
-    setFlash((current) => {
-      if (current === 'off') return 'on';
-      if (current === 'on') return 'auto';
-      return 'off';
-    });
-  };
-
-  const getFlashIcon = () => {
-    if (flash === 'on') return 'flash';
-    if (flash === 'auto') return 'flash-outline';
-    return 'flash-off-outline';
-  };
-
-  const handlePressIn = () => {
-    didLongPress.current = false;
-    setShowLenses(false);
-
-    Animated.spring(scaleAnim, {
-      toValue: 0.9,
-      useNativeDriver: true,
-    }).start();
-
-    longPressTimer.current = setTimeout(() => {
-      didLongPress.current = true;
-      startVideoRecording();
-    }, LONG_PRESS_DELAY);
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-
-    if (isRecording) {
-      stopVideoRecording();
-    } else if (!didLongPress.current) {
-      takePhoto();
-    }
-
-    setTimeout(() => setShowLenses(true), 300);
+  const toggleFlash = () => {
+    setFlash((current) => (current === 'off' ? 'on' : 'off'));
   };
 
   const takePhoto = async () => {
@@ -190,7 +277,6 @@ export default function CameraScreen() {
             eventId,
             uri: photo.uri,
             type: 'photo',
-            lens: selectedLens,
           },
         });
       }
@@ -209,7 +295,7 @@ export default function CameraScreen() {
     setIsRecording(true);
     try {
       const video = await cameraRef.current.recordAsync({
-        maxDuration: 60,
+        maxDuration: MAX_VIDEO_DURATION,
       });
       if (video) {
         router.push({
@@ -218,7 +304,6 @@ export default function CameraScreen() {
             eventId,
             uri: video.uri,
             type: 'video',
-            lens: selectedLens,
           },
         });
       }
@@ -234,41 +319,44 @@ export default function CameraScreen() {
     cameraRef.current.stopRecording();
   };
 
+  // Progress ring calculation
+  const progressRotation = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   // Permission screen
   if (!cameraPermission?.granted) {
     return (
       <View style={styles.container}>
         <LinearGradient
-          colors={['#1a1a2e', '#16213e', '#0f3460']}
-          style={styles.permissionGradient}
+          colors={['#000', '#1a1a1a']}
+          style={styles.permissionContainer}
         >
           <View style={styles.permissionContent}>
-            <View style={styles.permissionIconContainer}>
-              <Ionicons name="camera" size={56} color="#fff" />
+            <View style={styles.permissionIconWrapper}>
+              <Ionicons name="camera" size={48} color="#fff" />
             </View>
             <Text style={styles.permissionTitle}>
               {isArabic ? 'الوصول للكاميرا' : 'Camera Access'}
             </Text>
             <Text style={styles.permissionText}>
               {isArabic
-                ? 'نحتاج إذن الكاميرا لالتقاط صور وفيديوهات للمناسبة'
-                : 'We need camera permission to capture photos and videos for the event'}
+                ? 'نحتاج إذن الكاميرا لالتقاط صور وفيديوهات'
+                : 'We need camera access to capture photos and videos'}
             </Text>
-            <TouchableOpacity style={styles.permissionButton} onPress={requestCameraPermission}>
-              <LinearGradient
-                colors={[Colors.primary, Colors.primaryDark]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.permissionButtonGradient}
-              >
-                <Text style={styles.permissionButtonText}>
-                  {isArabic ? 'السماح' : 'Allow Access'}
-                </Text>
-              </LinearGradient>
+            <TouchableOpacity
+              style={styles.permissionButton}
+              onPress={requestCameraPermission}
+            >
+              <Text style={styles.permissionButtonText}>
+                {isArabic ? 'السماح' : 'Allow'}
+              </Text>
             </TouchableOpacity>
           </View>
+
           <TouchableOpacity
-            style={[styles.closeButtonTop, { top: insets.top + 12 }]}
+            style={[styles.closeButton, { top: insets.top + 16 }]}
             onPress={() => router.back()}
           >
             <Ionicons name="close" size={28} color="#fff" />
@@ -280,136 +368,140 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Camera */}
+      {/* Full Screen Camera */}
       <CameraView
         ref={cameraRef}
-        style={styles.camera}
+        style={StyleSheet.absoluteFill}
         facing={facing}
-        flash={flash === 'auto' ? 'auto' : flash}
+        flash={flash}
         mode="video"
       />
 
-      {/* Top Bar */}
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.topButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-down" size={32} color="#fff" />
+      {/* Top Controls */}
+      <View style={[styles.topControls, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="close" size={30} color="#fff" />
         </TouchableOpacity>
 
-        {isRecording ? (
-          <View style={styles.recordingBadge}>
-            <View style={styles.recordingDotLive} />
-            <Text style={styles.recordingTimeText}>{formatDuration(recordingDuration)}</Text>
-          </View>
-        ) : (
-          <View style={styles.topCenter}>
-            <Text style={styles.eventLabel}>
-              {isArabic ? 'قصة المناسبة' : 'Event Story'}
-            </Text>
+        {isRecording && (
+          <View style={styles.recordingIndicator}>
+            <View style={styles.recordingDot} />
+            <Text style={styles.recordingTime}>{formatDuration(recordingDuration)}</Text>
           </View>
         )}
 
-        <TouchableOpacity style={styles.topButton} onPress={cycleFlash}>
-          <Ionicons name={getFlashIcon()} size={26} color="#fff" />
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={toggleFlash}
+        >
+          <Ionicons
+            name={flash === 'on' ? 'flash' : 'flash-off'}
+            size={26}
+            color="#fff"
+          />
         </TouchableOpacity>
       </View>
-
-      {/* Right Side Controls */}
-      <View style={styles.sideControls}>
-        <TouchableOpacity style={styles.sideButton} onPress={toggleCameraFacing}>
-          <Ionicons name="camera-reverse-outline" size={28} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Lenses */}
-      {showLenses && !isRecording && (
-        <View style={styles.lensesContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.lensesScroll}
-          >
-            {LENSES.map((lens) => (
-              <TouchableOpacity
-                key={lens.id}
-                style={[
-                  styles.lensItem,
-                  selectedLens === lens.id && styles.lensItemActive,
-                ]}
-                onPress={() => setSelectedLens(lens.id)}
-              >
-                <View style={[
-                  styles.lensIcon,
-                  selectedLens === lens.id && styles.lensIconActive,
-                ]}>
-                  <Ionicons
-                    name={lens.icon as any}
-                    size={22}
-                    color={selectedLens === lens.id ? Colors.primary : '#fff'}
-                  />
-                </View>
-                <Text style={[
-                  styles.lensName,
-                  selectedLens === lens.id && styles.lensNameActive,
-                ]}>
-                  {isArabic ? lens.nameAr : lens.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
 
       {/* Bottom Controls */}
-      <View style={[styles.bottomContainer, { paddingBottom: insets.bottom }]}>
-        <View style={styles.bottomBar}>
-          {/* Hint */}
-          {!isRecording && (
-            <Text style={styles.hintText}>
-              {isArabic ? 'اضغط للصورة • اضغط مطولاً للفيديو' : 'Tap for photo • Hold for video'}
-            </Text>
-          )}
+      <View
+        style={[styles.bottomControls, { paddingBottom: insets.bottom + 32 }]}
+      >
+        {/* Flip Camera Button - Left */}
+        <TouchableOpacity
+          style={styles.sideButton}
+          onPress={toggleCameraFacing}
+          disabled={isRecording}
+        >
+          <Ionicons name="camera-reverse" size={30} color={isRecording ? 'rgba(255,255,255,0.3)' : '#fff'} />
+        </TouchableOpacity>
 
-          {/* Capture Button */}
-          <View style={styles.captureContainer}>
-            <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
-              <Animated.View
-                style={[
-                  styles.captureOuter,
-                  { transform: [{ scale: scaleAnim }] },
-                ]}
-              >
+        {/* Capture Button with Lock - Center */}
+        <View style={styles.captureWrapper}>
+          {/* Lock Icon - Slides up */}
+          <Animated.View
+            style={[
+              styles.lockContainer,
+              {
+                opacity: lockOpacity,
+                transform: [{ translateY: lockSlideY }, { scale: lockScale }],
+              }
+            ]}
+          >
+            <View style={[styles.lockIcon, isLocked && styles.lockIconLocked]}>
+              <Ionicons name={isLocked ? 'lock-closed' : 'lock-open'} size={20} color="#fff" />
+            </View>
+            {!isLocked && (
+              <Text style={styles.lockHint}>
+                {isArabic ? 'اسحب للقفل' : 'Slide to lock'}
+              </Text>
+            )}
+          </Animated.View>
+
+          {/* Main Capture Button - Hidden when locked */}
+          {!isLocked && (
+            <Animated.View
+              style={[
+                styles.captureOuter,
+                {
+                  transform: [{ scale: captureScale }],
+                  opacity: ringOpacity,
+                },
+              ]}
+              {...panResponder.panHandlers}
+            >
+              <View style={styles.captureTouch}>
+                {/* Progress Ring */}
                 {isRecording && (
                   <Animated.View
                     style={[
                       styles.progressRing,
-                      {
-                        borderColor: '#E53935',
-                        borderRightColor: 'transparent',
-                        transform: [
-                          {
-                            rotate: progressAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: ['0deg', '360deg'],
-                            }),
-                          },
-                        ],
-                      },
+                      { transform: [{ rotate: progressRotation }] },
                     ]}
                   />
                 )}
+
+                {/* Inner Circle */}
                 <Animated.View
                   style={[
                     styles.captureInner,
                     isRecording && styles.captureInnerRecording,
-                    isRecording && { transform: [{ scale: pulseAnim }] },
+                    { transform: [{ scale: innerScale }] },
                   ]}
-                >
-                  {isRecording && <View style={styles.stopIcon} />}
-                </Animated.View>
-              </Animated.View>
-            </Pressable>
-          </View>
+                />
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Stop Button when Locked */}
+          {isLocked && (
+            <TouchableOpacity
+              style={styles.stopButtonLocked}
+              onPress={stopVideoRecording}
+            >
+              {/* Progress Ring around stop button */}
+              <Animated.View
+                style={[
+                  styles.progressRingLocked,
+                  { transform: [{ rotate: progressRotation }] },
+                ]}
+              />
+              <View style={styles.stopButtonInner} />
+            </TouchableOpacity>
+          )}
+
+          {/* Hint Text */}
+          {!isRecording && (
+            <Text style={styles.hintText}>
+              {isArabic ? 'اضغط مطولاً للفيديو' : 'Hold for video'}
+            </Text>
+          )}
         </View>
+
+        {/* Placeholder for symmetry - Right */}
+        <View style={styles.sideButton} />
       </View>
     </View>
   );
@@ -420,68 +512,62 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  camera: {
-    flex: 1,
-  },
-  // Permission styles
-  permissionGradient: {
+
+  // Permission Screen
+  permissionContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   permissionContent: {
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 48,
   },
-  permissionIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  permissionIconWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 32,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
+    marginBottom: 24,
   },
   permissionTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#fff',
     marginBottom: 12,
   },
   permissionText: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 40,
+    marginBottom: 32,
   },
   permissionButton: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  permissionButtonGradient: {
+    backgroundColor: '#fff',
     paddingHorizontal: 48,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    borderRadius: 30,
   },
   permissionButtonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#000',
   },
-  closeButtonTop: {
+  closeButton: {
     position: 'absolute',
     left: 20,
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Top bar
-  topBar: {
+
+  // Top Controls
+  topControls: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -489,169 +575,148 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
-  topButton: {
+  controlButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  topCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  eventLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#fff',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  recordingBadge: {
+  recordingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(229, 57, 53, 0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     gap: 8,
   },
-  recordingDotLive: {
+  recordingDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#fff',
   },
-  recordingTimeText: {
+  recordingTime: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#fff',
     fontVariant: ['tabular-nums'],
   },
-  // Side controls
-  sideControls: {
-    position: 'absolute',
-    right: 16,
-    top: '45%',
-    gap: 16,
-  },
-  sideButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Lenses
-  lensesContainer: {
-    position: 'absolute',
-    bottom: 180,
-    left: 0,
-    right: 0,
-  },
-  lensesScroll: {
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  lensItem: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  lensItemActive: {},
-  lensIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  lensIconActive: {
-    backgroundColor: '#fff',
-    borderColor: Colors.primary,
-  },
-  lensName: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.7)',
-  },
-  lensNameActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  // Bottom
-  bottomContainer: {
+
+  // Bottom Controls
+  bottomControls: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-  },
-  bottomBar: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingTop: 20,
-    paddingBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
+    paddingHorizontal: 40,
   },
-  hintText: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 20,
+  sideButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  captureContainer: {
+  captureWrapper: {
     alignItems: 'center',
   },
   captureOuter: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#f0f0f0',
+    width: CAPTURE_OUTER_SIZE,
+    height: CAPTURE_OUTER_SIZE,
+    borderRadius: CAPTURE_OUTER_SIZE / 2,
+    borderWidth: 4,
+    borderColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#e0e0e0',
+  },
+  captureTouch: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   progressRing: {
     position: 'absolute',
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: CAPTURE_OUTER_SIZE + 8,
+    height: CAPTURE_OUTER_SIZE + 8,
+    borderRadius: (CAPTURE_OUTER_SIZE + 8) / 2,
     borderWidth: 4,
-    borderColor: '#E53935',
+    borderColor: Colors.primary,
+    borderRightColor: 'transparent',
+    borderBottomColor: 'transparent',
   },
   captureInner: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: CAPTURE_SIZE - 8,
+    height: CAPTURE_SIZE - 8,
+    borderRadius: (CAPTURE_SIZE - 8) / 2,
+    backgroundColor: '#fff',
+  },
+  captureInnerRecording: {
     backgroundColor: Colors.primary,
+    borderRadius: 8,
+  },
+  hintText: {
+    marginTop: 16,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
+  },
+
+  // Lock feature
+  lockContainer: {
+    position: 'absolute',
+    bottom: CAPTURE_OUTER_SIZE + 20,
+    alignItems: 'center',
+  },
+  lockIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  lockIconLocked: {
+    backgroundColor: Colors.primary,
+  },
+  lockHint: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
+  },
+
+  // Stop button (when locked)
+  stopButtonLocked: {
+    width: CAPTURE_OUTER_SIZE,
+    height: CAPTURE_OUTER_SIZE,
+    borderRadius: CAPTURE_OUTER_SIZE / 2,
+    borderWidth: 4,
+    borderColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  captureInnerRecording: {
-    backgroundColor: '#E53935',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  progressRingLocked: {
+    position: 'absolute',
+    width: CAPTURE_OUTER_SIZE + 8,
+    height: CAPTURE_OUTER_SIZE + 8,
+    borderRadius: (CAPTURE_OUTER_SIZE + 8) / 2,
+    borderWidth: 4,
+    borderColor: Colors.primary,
+    borderRightColor: 'transparent',
+    borderBottomColor: 'transparent',
   },
-  stopIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    backgroundColor: '#fff',
+  stopButtonInner: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: Colors.primary,
   },
 });

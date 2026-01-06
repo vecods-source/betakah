@@ -23,6 +23,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Contacts from 'expo-contacts';
+import * as ImagePicker from 'expo-image-picker';
 import { useAppDispatch, useAppSelector } from '../../../src/hooks';
 import { createEvent } from '../../../src/store/slices/eventsSlice';
 import { Colors } from '../../../src/constants/colors';
@@ -119,15 +120,6 @@ const eventTypes: EventTypeConfig[] = [
     bgColor: '#FFF3E0',
     gradient: ['#FFF3E0', '#FFE0B2'],
   },
-  {
-    type: 'CONDOLENCE',
-    icon: 'flower-outline',
-    iconFamily: 'ionicons',
-    labelKey: 'events.types.other',
-    color: '#607D8B',
-    bgColor: '#ECEFF1',
-    gradient: ['#ECEFF1', '#CFD8DC'],
-  },
 ];
 
 const EventTypeIcon = ({ config, size = 32 }: { config: EventTypeConfig; size?: number }) => {
@@ -213,6 +205,7 @@ export default function CreateEventScreen() {
 
   // Step 5: Settings
   const [genderRestriction, setGenderRestriction] = useState<GenderRestriction>('MIXED');
+  const [coverImage, setCoverImage] = useState<string | null>(null);
 
   // Guest lists
   interface Guest {
@@ -224,6 +217,7 @@ export default function CreateEventScreen() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [showGuestSheet, setShowGuestSheet] = useState(false);
   const [guestSheetMode, setGuestSheetMode] = useState<'contacts' | 'manual'>('contacts');
+  const guestSheetAnim = useRef(new Animated.Value(300)).current;
   const [showPreviewSheet, setShowPreviewSheet] = useState(false);
   const [guestSheetGender, setGuestSheetGender] = useState<'male' | 'female'>('male');
   const [manualGuestName, setManualGuestName] = useState('');
@@ -291,6 +285,20 @@ export default function CreateEventScreen() {
     }
   }, [showDatePicker]);
 
+  // Guest sheet animation
+  useEffect(() => {
+    if (showGuestSheet) {
+      Animated.spring(guestSheetAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 65,
+        friction: 11,
+      }).start();
+    } else {
+      guestSheetAnim.setValue(300);
+    }
+  }, [showGuestSheet]);
+
   // Debounced map search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -348,6 +356,28 @@ export default function CreateEventScreen() {
     }
   };
 
+  // Pick cover image
+  const pickCoverImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setCoverImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert(
+        isArabic ? 'خطأ' : 'Error',
+        isArabic ? 'فشل في اختيار الصورة' : 'Failed to pick image'
+      );
+    }
+  };
+
   // Open contacts sheet
   const openContactsSheet = (gender: 'male' | 'female') => {
     setGuestSheetGender(gender);
@@ -376,6 +406,18 @@ export default function CreateEventScreen() {
       newSelected.add(contactId);
     }
     setSelectedContacts(newSelected);
+  };
+
+  // Toggle select all contacts
+  const toggleSelectAllContacts = () => {
+    if (selectedContacts.size === filteredContacts.length) {
+      // Deselect all
+      setSelectedContacts(new Set());
+    } else {
+      // Select all filtered contacts
+      const allIds = new Set(filteredContacts.map(c => c.id || '').filter(id => id));
+      setSelectedContacts(allIds);
+    }
   };
 
   // Add selected contacts as guests
@@ -1185,6 +1227,56 @@ export default function CreateEventScreen() {
         </View>
       </View>
 
+      {/* Cover Image Section */}
+      <View style={styles.inputGroup}>
+        <Text style={[styles.inputLabel]}>
+          {isArabic ? 'صورة الغلاف' : 'Cover Image'}
+        </Text>
+        <Text style={styles.inputHint}>
+          {isArabic ? 'اختياري - ستظهر في صفحة المناسبة' : 'Optional - appears on event page'}
+        </Text>
+
+        <TouchableOpacity
+          style={styles.coverImagePicker}
+          onPress={pickCoverImage}
+          activeOpacity={0.7}
+        >
+          {coverImage ? (
+            <View style={styles.coverImageContainer}>
+              <Image
+                source={{ uri: coverImage }}
+                style={styles.coverImagePreview}
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                style={styles.coverImageRemove}
+                onPress={() => setCoverImage(null)}
+              >
+                <Feather name="x" size={16} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.coverImageOverlay}>
+                <Feather name="edit-2" size={20} color="#fff" />
+                <Text style={styles.coverImageOverlayText}>
+                  {isArabic ? 'تغيير' : 'Change'}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.coverImagePlaceholder}>
+              <View style={styles.coverImageIconWrapper}>
+                <Feather name="image" size={28} color={Colors.primary} />
+              </View>
+              <Text style={styles.coverImageText}>
+                {isArabic ? 'إضافة صورة غلاف' : 'Add Cover Image'}
+              </Text>
+              <Text style={styles.coverImageSubtext}>
+                {isArabic ? 'اضغط للاختيار من المعرض' : 'Tap to select from gallery'}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
       {/* Guest List Section */}
       <View style={styles.inputGroup}>
         <Text style={[styles.inputLabel]}>
@@ -1740,10 +1832,10 @@ export default function CreateEventScreen() {
       </Modal>
 
       {/* Guest Add Sheet Modal */}
-      <Modal visible={showGuestSheet} transparent animationType="fade">
+      <Modal visible={showGuestSheet} transparent animationType="fade" onRequestClose={() => setShowGuestSheet(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setShowGuestSheet(false)}>
-          <Animated.View style={styles.guestSheet}>
-            <Pressable onPress={(e) => e.stopPropagation()}>
+          <Animated.View style={[styles.guestSheet, { transform: [{ translateY: guestSheetAnim }] }]}>
+            <Pressable style={{ width: '100%' }} onPress={(e) => e.stopPropagation()}>
               <View style={styles.bottomSheetHandle} />
               <Text style={styles.bottomSheetTitle}>
                 {guestSheetMode === 'contacts'
@@ -1825,6 +1917,36 @@ export default function CreateEventScreen() {
                     )}
                   </View>
 
+                  {/* Select All Row */}
+                  {!contactsLoading && filteredContacts.length > 0 && (
+                    <TouchableOpacity
+                      style={styles.selectAllRow}
+                      onPress={toggleSelectAllContacts}
+                    >
+                      <View style={[
+                        styles.selectAllCheckbox,
+                        { borderColor: guestSheetGender === 'male' ? Colors.primary : '#E91E63' },
+                        selectedContacts.size === filteredContacts.length && {
+                          backgroundColor: guestSheetGender === 'male' ? Colors.primary : '#E91E63'
+                        },
+                      ]}>
+                        {selectedContacts.size === filteredContacts.length && (
+                          <Feather name="check" size={14} color="#fff" />
+                        )}
+                      </View>
+                      <View style={[styles.selectAllTextContainer, { alignItems: 'flex-start' }]}>
+                        <Text style={styles.selectAllText}>
+                          {selectedContacts.size === filteredContacts.length
+                            ? (isArabic ? 'إلغاء تحديد الكل' : 'Deselect All')
+                            : (isArabic ? 'تحديد الكل' : 'Select All')}
+                        </Text>
+                      </View>
+                      <Text style={styles.selectAllCount}>
+                        ({filteredContacts.length})
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
                   {/* Selected Count */}
                   {selectedContacts.size > 0 && (
                     <View style={styles.selectedCountBar}>
@@ -1878,7 +2000,7 @@ export default function CreateEventScreen() {
                                 {(contact.name || '?').charAt(0).toUpperCase()}
                               </Text>
                             </View>
-                            <View style={styles.contactInfo}>
+                            <View style={[styles.contactInfo, { alignItems: 'flex-start' }]}>
                               <Text style={styles.contactName} numberOfLines={1}>
                                 {contact.name || 'Unknown'}
                               </Text>
@@ -2057,7 +2179,7 @@ export default function CreateEventScreen() {
                             <View style={[styles.contactAvatar, { backgroundColor: `${Colors.primary}15` }]}>
                               <Feather name="star" size={16} color={Colors.primary} />
                             </View>
-                            <View style={styles.contactInfo}>
+                            <View style={[styles.contactInfo, { alignItems: 'flex-start' }]}>
                               <Text style={styles.contactName} numberOfLines={1}>
                                 {contact.name || 'Unknown'}
                               </Text>
@@ -2295,6 +2417,83 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: 'left',
   },
+  inputHint: {
+    fontSize: 12,
+    color: Colors.gray[400],
+    marginBottom: 12,
+  },
+
+  // Cover Image
+  coverImagePicker: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: Colors.gray[50],
+  },
+  coverImageContainer: {
+    position: 'relative',
+  },
+  coverImagePreview: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+  },
+  coverImageRemove: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  coverImageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    gap: 8,
+  },
+  coverImageOverlayText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  coverImagePlaceholder: {
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.gray[200],
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    gap: 8,
+  },
+  coverImageIconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: `${Colors.primary}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  coverImageText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.gray[700],
+  },
+  coverImageSubtext: {
+    fontSize: 13,
+    color: Colors.gray[400],
+  },
+
   input: {
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[300],
@@ -2918,7 +3117,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 40,
-    marginTop: 'auto',
+    width: '100%',
   },
   manualGuestForm: {
     padding: 20,
@@ -2949,6 +3148,7 @@ const styles = StyleSheet.create({
   },
   contactsContainer: {
     maxHeight: SCREEN_HEIGHT * 0.7,
+    width: '100%',
   },
   contactsSearchBar: {
     flexDirection: 'row',
@@ -2966,7 +3166,37 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.black,
     padding: 0,
-    textAlign: 'left',
+  },
+  selectAllRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: Colors.gray[50],
+    borderRadius: 10,
+    gap: 12,
+  },
+  selectAllCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectAllTextContainer: {
+    flex: 1,
+  },
+  selectAllText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.black,
+  },
+  selectAllCount: {
+    fontSize: 14,
+    color: Colors.gray[500],
   },
   selectedCountBar: {
     backgroundColor: Colors.primary + '15',
@@ -3003,14 +3233,17 @@ const styles = StyleSheet.create({
   contactsList: {
     maxHeight: SCREEN_HEIGHT * 0.45,
     paddingHorizontal: 20,
+    width: '100%',
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 4,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: Colors.gray[50],
+    width: '100%',
   },
   contactItemSelected: {
     backgroundColor: Colors.gray[100],
@@ -3034,7 +3267,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: Colors.black,
-    textAlign: 'left',
   },
   contactPhone: {
     fontSize: 13,

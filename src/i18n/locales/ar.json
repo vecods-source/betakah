@@ -1,4 +1,10 @@
 {
+  "tabs": {
+    "home": "الرئيسية",
+    "events": "المناسبات",
+    "invitations": "الدعوات",
+    "profile": "حسابي"
+  },
   "common": {
     "loading": "جاري التحميل...",
     "error": "خطأ",
@@ -156,7 +162,7 @@
     "myEvents": "مناسباتي",
     "invitations": "الدعوات",
     "upcoming": "القادمة",
-    "past": "السابقة",
+    "past": "منتهيه",
     "hosting": "أستضيف",
     "attending": "أحضر",
     "create": "إنشاء مناسبة",
@@ -186,12 +192,12 @@
     },
     "types": {
       "wedding": "زفاف",
-      "birthday": "عيد ميلاد",
+      "birthday": "يوم ميلاد",
       "graduation": "تخرج",
       "baby_shower": "استقبال مولود",
       "engagement": "خطوبة",
       "corporate": "شركات",
-      "social": "اجتماعي",
+      "social": "جمعات",
       "religious": "ديني",
       "other": "أخرى"
     },

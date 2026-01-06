@@ -1,27 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
-  Platform,
   ScrollView,
   Modal,
-  Animated,
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalization, useTheme } from '../../../src/hooks';
-import { UIHeader } from '../../../src/components/ui';
+import { DatePickerSheet, UIInput } from '../../../src/components/ui';
 import { Colors } from '../../../src/constants/colors';
 
 type DateType = 'BIRTHDAY' | 'ANNIVERSARY' | 'OTHER';
 
-const DATE_TYPES: { type: DateType; labelKey: string; icon: string; color: string }[] = [
+const DATE_TYPES: { type: DateType; labelKey: string; icon: keyof typeof Feather.glyphMap; color: string }[] = [
   { type: 'BIRTHDAY', labelKey: 'profile.dates.types.birthday', icon: 'gift', color: '#E53935' },
   { type: 'ANNIVERSARY', labelKey: 'profile.dates.types.anniversary', icon: 'heart', color: '#D81B60' },
   { type: 'OTHER', labelKey: 'profile.dates.types.other', icon: 'calendar', color: '#1E88E5' },
@@ -29,9 +26,10 @@ const DATE_TYPES: { type: DateType; labelKey: string; icon: string; color: strin
 
 export default function AddImportantDateScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { isArabic } = useLocalization();
-  const { colors, cardBackground, screenBackground, textPrimary, textSecondary } = useTheme();
+  const { colors, cardBackground, screenBackground, textPrimary, textSecondary, isDark } = useTheme();
 
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date());
@@ -39,44 +37,11 @@ export default function AddImportantDateScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTypePicker, setShowTypePicker] = useState(false);
 
-  // Animation refs
-  const dateSlideAnim = useRef(new Animated.Value(300)).current;
-  const typeSlideAnim = useRef(new Animated.Value(300)).current;
-
-  // Date picker animation
-  useEffect(() => {
-    if (showDatePicker) {
-      Animated.spring(dateSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    } else {
-      dateSlideAnim.setValue(300);
-    }
-  }, [showDatePicker]);
-
-  // Type picker animation
-  useEffect(() => {
-    if (showTypePicker) {
-      Animated.spring(typeSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    } else {
-      typeSlideAnim.setValue(300);
-    }
-  }, [showTypePicker]);
-
-  const getTypeConfig = (t: DateType) => DATE_TYPES.find((dt) => dt.type === t) || DATE_TYPES[0];
+  const getTypeConfig = (dateType: DateType) => DATE_TYPES.find((dt) => dt.type === dateType) || DATE_TYPES[0];
 
   const handleSave = () => {
     if (!title.trim()) return;
 
-    // TODO: Save to store/API
     const newDate = {
       id: Date.now().toString(),
       title: title.trim(),
@@ -88,204 +53,154 @@ export default function AddImportantDateScreen() {
     router.back();
   };
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
+  const formatDate = (d: Date) => {
+    return d.toLocaleDateString(isArabic ? 'ar-QA' : 'en-QA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
-  const renderSaveButton = () => (
-    <TouchableOpacity
-      style={[styles.saveHeaderButton, !title.trim() && styles.saveHeaderButtonDisabled]}
-      onPress={handleSave}
-      disabled={!title.trim()}
-    >
-      <Text style={[styles.saveHeaderText, !title.trim() && styles.saveHeaderTextDisabled]}>
-        {t('common.save')}
-      </Text>
-    </TouchableOpacity>
-  );
+  const canSave = title.trim().length > 0;
+  const currentTypeConfig = getTypeConfig(type);
 
   return (
     <View style={[styles.container, { backgroundColor: screenBackground }]}>
-      <UIHeader
-        title={t('profile.dates.add')}
-        rightAction={renderSaveButton()}
-      />
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity
+          style={[styles.headerButton, { backgroundColor: isDark ? colors.gray[800] : colors.gray[100] }]}
+          onPress={() => router.back()}
+        >
+          <Feather name={isArabic ? 'arrow-right' : 'arrow-left'} size={20} color={textPrimary} />
+        </TouchableOpacity>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Title Input */}
-        <View style={styles.inputGroup}>
-          <Text style={[styles.inputLabel, { color: textSecondary }]}>
-            {isArabic ? 'العنوان' : 'Title'}
-          </Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: cardBackground, color: textPrimary }]}
-            placeholder={isArabic ? 'مثال: عيد ميلاد أمي' : "e.g., Mom's Birthday"}
-            placeholderTextColor={colors.gray[400]}
-            value={title}
-            onChangeText={setTitle}
-          />
-        </View>
+        <Text style={[styles.headerTitle, { color: textPrimary }]}>
+          {isArabic ? 'إضافة تاريخ مهم' : 'Add Important Date'}
+        </Text>
 
-        {/* Date Picker */}
-        <View style={styles.inputGroup}>
-          <Text style={[styles.inputLabel, { color: textSecondary }]}>
-            {isArabic ? 'التاريخ' : 'Date'}
-          </Text>
-          <TouchableOpacity
-            style={[styles.datePickerButton, { backgroundColor: cardBackground }]}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Feather name="calendar" size={20} color={Colors.primary} />
-            <Text style={[styles.datePickerText, { color: textPrimary }]}>
-              {date.toLocaleDateString(isArabic ? 'ar-QA' : 'en-QA', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Text>
-            <Feather name={isArabic ? 'chevron-left' : 'chevron-right'} size={20} color={colors.gray[400]} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Type Selector */}
-        <View style={styles.inputGroup}>
-          <Text style={[styles.inputLabel, { color: textSecondary }]}>
-            {isArabic ? 'النوع' : 'Type'}
-          </Text>
-          <TouchableOpacity
-            style={[styles.typePickerButton, { backgroundColor: cardBackground }]}
-            onPress={() => setShowTypePicker(true)}
-          >
-            <View style={[styles.typeIconSmall, { backgroundColor: `${getTypeConfig(type).color}15` }]}>
-              <Feather name={getTypeConfig(type).icon as any} size={18} color={getTypeConfig(type).color} />
-            </View>
-            <Text style={[styles.typePickerText, { color: textPrimary }]}>
-              {t(getTypeConfig(type).labelKey)}
-            </Text>
-            <Feather name={isArabic ? 'chevron-left' : 'chevron-right'} size={20} color={colors.gray[400]} />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-
-      {/* Bottom Save Button */}
-      <View style={[styles.bottomContainer, { backgroundColor: screenBackground }]}>
         <TouchableOpacity
           style={[
             styles.saveButton,
-            { backgroundColor: Colors.primary },
-            !title.trim() && styles.saveButtonDisabled,
+            { backgroundColor: canSave ? Colors.primary : (isDark ? colors.gray[800] : colors.gray[200]) }
           ]}
           onPress={handleSave}
-          disabled={!title.trim()}
+          disabled={!canSave}
         >
-          <Text style={styles.saveButtonText}>
-            {t('common.save')}
+          <Text style={[styles.saveButtonText, { color: canSave ? '#fff' : colors.gray[400] }]}>
+            {isArabic ? 'حفظ' : 'Save'}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Date Picker Slide Sheet */}
-      <Modal
-        visible={showDatePicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDatePicker(false)}
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowDatePicker(false)}>
-          <Animated.View
-            style={[
-              styles.sheetContainer,
-              { backgroundColor: cardBackground, transform: [{ translateY: dateSlideAnim }] },
-            ]}
-          >
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <View style={styles.sheetHandle} />
-              <View style={styles.sheetHeader}>
-                <Text style={[styles.sheetTitle, { color: textPrimary }]}>
-                  {isArabic ? 'اختر التاريخ' : 'Select Date'}
-                </Text>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={[styles.sheetDone, { color: Colors.primary }]}>
-                    {t('common.done')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="spinner"
-                onChange={onDateChange}
-                style={styles.datePickerSpinner}
-                textColor={textPrimary}
-              />
-            </Pressable>
-          </Animated.View>
-        </Pressable>
-      </Modal>
+        {/* Title Input */}
+        <UIInput
+          label={isArabic ? 'العنوان' : 'Title'}
+          placeholder={isArabic ? 'مثال: عيد ميلاد أمي' : "e.g., Mom's Birthday"}
+          value={title}
+          onChangeText={setTitle}
+        />
 
-      {/* Type Picker Slide Sheet */}
+        {/* Date Picker Field */}
+        <View style={styles.fieldGroup}>
+          <Text style={[styles.fieldLabel, { color: textSecondary, textAlign: 'left' }]}>
+            {isArabic ? 'التاريخ' : 'Date'}
+          </Text>
+          <TouchableOpacity
+            style={[styles.dateField, { borderBottomColor: isDark ? colors.gray[600] : Colors.gray[300] }]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Feather name="calendar" size={18} color={Colors.primary} />
+            <Text style={[styles.dateText, { color: textPrimary, textAlign: 'left' }]}>
+              {formatDate(date)}
+            </Text>
+            <Feather name="chevron-down" size={18} color={colors.gray[400]} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Type Selector Field */}
+        <View style={styles.fieldGroup}>
+          <Text style={[styles.fieldLabel, { color: textSecondary, textAlign: 'left' }]}>
+            {isArabic ? 'النوع' : 'Type'}
+          </Text>
+          <TouchableOpacity
+            style={[styles.typeField, { backgroundColor: cardBackground }]}
+            onPress={() => setShowTypePicker(true)}
+          >
+            <View style={[styles.typeIconWrapper, { backgroundColor: `${currentTypeConfig.color}15` }]}>
+              <Feather name={currentTypeConfig.icon} size={20} color={currentTypeConfig.color} />
+            </View>
+            <Text style={[styles.typeText, { color: textPrimary, textAlign: 'left' }]}>
+              {t(currentTypeConfig.labelKey)}
+            </Text>
+            <Feather name="chevron-down" size={18} color={colors.gray[400]} />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Date Picker Sheet */}
+      <DatePickerSheet
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        onConfirm={(selectedDate) => setDate(selectedDate)}
+        value={date}
+        mode="date"
+        title={isArabic ? 'اختر التاريخ' : 'Select Date'}
+      />
+
+      {/* Type Picker Bottom Sheet */}
       <Modal
         visible={showTypePicker}
         transparent
         animationType="fade"
         onRequestClose={() => setShowTypePicker(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowTypePicker(false)}>
-          <Animated.View
-            style={[
-              styles.sheetContainer,
-              { backgroundColor: cardBackground, transform: [{ translateY: typeSlideAnim }] },
-            ]}
+        <Pressable style={styles.overlay} onPress={() => setShowTypePicker(false)}>
+          <Pressable
+            style={[styles.bottomSheet, { backgroundColor: cardBackground }]}
+            onPress={(e) => e.stopPropagation()}
           >
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <View style={styles.sheetHandle} />
-              <View style={styles.sheetHeader}>
-                <Text style={[styles.sheetTitle, { color: textPrimary }]}>
-                  {isArabic ? 'اختر النوع' : 'Select Type'}
-                </Text>
-                <TouchableOpacity onPress={() => setShowTypePicker(false)}>
-                  <Text style={[styles.sheetDone, { color: Colors.primary }]}>
-                    {t('common.done')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.typeOptionsSheet}>
-                {DATE_TYPES.map((typeConfig) => {
-                  const isSelected = type === typeConfig.type;
-                  return (
-                    <TouchableOpacity
-                      key={typeConfig.type}
-                      style={[
-                        styles.typeOptionSheet,
-                        isSelected && { backgroundColor: `${typeConfig.color}10` },
-                      ]}
-                      onPress={() => {
-                        setType(typeConfig.type);
-                        setShowTypePicker(false);
-                      }}
-                    >
-                      <View style={[styles.typeIconContainer, { backgroundColor: `${typeConfig.color}15` }]}>
-                        <Feather name={typeConfig.icon as any} size={22} color={typeConfig.color} />
+            <View style={[styles.sheetHandle, { backgroundColor: colors.gray[300] }]} />
+            <Text style={[styles.sheetTitle, { color: textPrimary }]}>
+              {isArabic ? 'اختر النوع' : 'Select Type'}
+            </Text>
+
+            <View style={styles.typeList}>
+              {DATE_TYPES.map((typeConfig) => {
+                const isSelected = type === typeConfig.type;
+                return (
+                  <TouchableOpacity
+                    key={typeConfig.type}
+                    style={[
+                      styles.typeOption,
+                      isSelected && { backgroundColor: `${typeConfig.color}10` },
+                    ]}
+                    onPress={() => {
+                      setType(typeConfig.type);
+                      setShowTypePicker(false);
+                    }}
+                  >
+                    <View style={[styles.typeOptionIcon, { backgroundColor: `${typeConfig.color}15` }]}>
+                      <Feather name={typeConfig.icon} size={22} color={typeConfig.color} />
+                    </View>
+                    <Text style={[styles.typeOptionText, { color: textPrimary, textAlign: 'left' }]}>
+                      {t(typeConfig.labelKey)}
+                    </Text>
+                    {isSelected && (
+                      <View style={[styles.checkCircle, { backgroundColor: typeConfig.color }]}>
+                        <Feather name="check" size={14} color="#fff" />
                       </View>
-                      <Text style={[styles.typeOptionLabel, { color: textPrimary }]}>
-                        {t(typeConfig.labelKey)}
-                      </Text>
-                      {isSelected && (
-                        <View style={[styles.checkmark, { backgroundColor: typeConfig.color }]}>
-                          <Feather name="check" size={14} color="#fff" />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </Pressable>
-          </Animated.View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>
@@ -295,155 +210,127 @@ export default function AddImportantDateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray[50],
   },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    fontSize: 16,
-  },
-  datePickerButton: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     gap: 12,
   },
-  datePickerText: {
-    flex: 1,
-    fontSize: 16,
-  },
-  typePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    gap: 12,
-  },
-  typePickerText: {
-    flex: 1,
-    fontSize: 16,
-  },
-  typeIconSmall: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bottomContainer: {
-    padding: 20,
-    paddingBottom: 36,
+  headerTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   saveButton: {
-    paddingVertical: 18,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    opacity: 0.5,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
   saveButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  saveHeaderButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: Colors.primary,
-  },
-  saveHeaderButtonDisabled: {
-    backgroundColor: Colors.gray[200],
-  },
-  saveHeaderText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
   },
-  saveHeaderTextDisabled: {
-    color: Colors.gray[400],
+  content: {
+    flex: 1,
   },
-  modalOverlay: {
+  contentContainer: {
+    padding: 20,
+  },
+  fieldGroup: {
+    marginBottom: 24,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  dateField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  dateText: {
+    flex: 1,
+    fontSize: 17,
+  },
+  typeField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
+  },
+  typeIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  typeText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
-  sheetContainer: {
-    backgroundColor: '#fff',
+  bottomSheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 40,
   },
   sheetHandle: {
-    width: 36,
+    width: 40,
     height: 4,
-    backgroundColor: Colors.gray[300],
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 12,
   },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
-  },
   sheetTitle: {
     fontSize: 18,
     fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 8,
   },
-  sheetDone: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  datePickerSpinner: {
-    height: 200,
-  },
-  typeOptionsSheet: {
+  typeList: {
     paddingVertical: 8,
   },
-  typeOptionSheet: {
+  typeOption: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
     gap: 14,
   },
-  typeIconContainer: {
+  typeOptionIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  typeOptionLabel: {
+  typeOptionText: {
     flex: 1,
     fontSize: 17,
     fontWeight: '500',
   },
-  checkmark: {
+  checkCircle: {
     width: 26,
     height: 26,
     borderRadius: 13,
